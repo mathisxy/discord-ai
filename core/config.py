@@ -1,5 +1,7 @@
 import logging
 
+import pytz
+from annotated_types import Timezone
 from dotenv import load_dotenv
 import os
 
@@ -101,6 +103,7 @@ class Config:
     NAME: str = require_env("NAME")
     INSTRUCTIONS: str = os.getenv("INSTRUCTIONS", "")
     LANGUAGE: Literal["de", "en"] = require_env("LANGUAGE")
+    TIMEZONE: pytz.BaseTzInfo = pytz.timezone(require_env("TIMEZONE"))
     DISCORD_ID: int|None = int(value) if (value := os.getenv("DISCORD_ID")) else None
     USERNAMES_CSV_FILE_PATH: str|None = os.getenv("USERNAMES_PATH")
     HISTORY_RESET_TEXT: str = require_env("HISTORY_RESET_TEXT")
