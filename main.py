@@ -17,6 +17,7 @@ from core.logging_config import setup_logging
 from core.discord_buttons import ProgressButton
 from core.discord_messages import DiscordMessage, DiscordMessageFile, DiscordMessageReply, \
     DiscordMessageTmpMixin, DiscordTemporaryMessagesController, DiscordMessageReplyTmpError
+from providers.azure import AzureLLM
 from providers.mistral import MistralLLM
 from providers.ollama import OllamaLLM
 
@@ -36,10 +37,12 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 
 match Config.AI:
-    case "ollama":
-        llm = OllamaLLM()
     case "mistral":
         llm = MistralLLM()
+    case "azure":
+        llm = AzureLLM()
+    case "ollama":
+        llm = OllamaLLM()
 
 
 async def call_ai(history: List[Dict], instructions: str, queue: asyncio.Queue[DiscordMessage|None], channel: str, use_help_bot: bool = True):

@@ -1,7 +1,6 @@
 import logging
 
 import pytz
-from annotated_types import Timezone
 from dotenv import load_dotenv
 import os
 
@@ -78,6 +77,11 @@ class Config:
 
     MISTRAL_API_KEY: str|None = os.getenv("MISTRAL_API_KEY")
     MISTRAL_MODEL: str = require_env("MISTRAL_MODEL")
+
+    AZURE_OPENAI_API_KEY: str|None = os.getenv("AZURE_OPENAI_API_KEY")
+    AZURE_OPENAI_API_VERSION: str = require_env("AZURE_OPENAI_API_VERSION")
+    AZURE_OPENAI_ENDPOINT: str = require_env("AZURE_OPENAI_ENDPOINT")
+    AZURE_OPENAI_MODEL: str = require_env("AZURE_OPENAI_MODEL")
 
     OLLAMA_URL: str = require_env("OLLAMA_URL")
     OLLAMA_MODEL: str = require_env("OLLAMA_MODEL")
