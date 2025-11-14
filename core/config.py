@@ -1,5 +1,7 @@
 import logging
 
+import pytz
+from annotated_types import Timezone
 from dotenv import load_dotenv
 import os
 
@@ -58,45 +60,54 @@ class Config:
             return []
         return [tag.strip() for tag in value.split(",") if tag.strip()]
 
+    @staticmethod
+    def require_env(name: str) -> str:
+        value = os.getenv(name)
+        if value is None or value == "":
+            raise RuntimeError(f"Environment variable '{name}' is required but not set.")
+        return value
 
 
-    LOGLEVEL: int = extract_loglevel(os.getenv("LOGLEVEL", "INFO"))
+
+
+    LOGLEVEL: int = extract_loglevel(require_env("LOGLEVEL"))
 
     DISCORD_TOKEN: str|None = os.getenv("DISCORD_TOKEN")
 
-    AI: Literal["ollama", "mistral"] = os.getenv("AI", "mistral")
+    AI: Literal["ollama", "mistral"] = require_env("AI")
 
     MISTRAL_API_KEY: str|None = os.getenv("MISTRAL_API_KEY")
-    MISTRAL_MODEL: str = os.getenv("MISTRAL_MODEL", "mistral-small-latest")
+    MISTRAL_MODEL: str = require_env("MISTRAL_MODEL")
 
-    OLLAMA_URL: str = os.getenv("OLLAMA_URL", "http://localhost:11434")
-    OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "gemma3:4b")
+    OLLAMA_URL: str = require_env("OLLAMA_URL")
+    OLLAMA_MODEL: str = require_env("OLLAMA_MODEL")
     OLLAMA_MODEL_TEMPERATURE: float|None = float(value) if (value := os.getenv("OLLAMA_MODEL_TEMPERATURE")) else None
     OLLAMA_THINK: bool|Literal["low", "medium", "high"]|None = extract_ollama_think(os.getenv("OLLAMA_THINK"))
     OLLAMA_KEEP_ALIVE: str|float|None = os.getenv("OLLAMA_KEEP_ALIVE")
     OLLAMA_TIMEOUT: float|None = float(value) if (value := os.getenv("OLLAMA_TIMEOUT")) else None
     OLLAMA_IMAGE_MODEL: bool = os.getenv("OLLAMA_IMAGE_MODEL", "").lower() == "true"
-    OLLAMA_IMAGE_MODEL_TYPES: List[str] = extract_csv_tags(os.getenv("OLLAMA_IMAGE_MODEL_TYPES", "image/jpeg,image/png"))
+    OLLAMA_IMAGE_MODEL_TYPES: List[str] = extract_csv_tags(require_env("OLLAMA_IMAGE_MODEL_TYPES"))
 
     TOOL_INTEGRATION: bool = os.getenv("TOOL_INTEGRATION", "").lower() == "true"
     MCP_SERVER_URL: str|None = os.getenv("MCP_SERVER_URL")
-    MCP_INTEGRATION_CLASS = os.getenv("MCP_INTEGRATION_CLASS", "providers.utils.mcp_integrations.base")
+    MCP_INTEGRATION_CLASS: str = require_env("MCP_INTEGRATION_CLASS")
     MCP_TOOL_TAGS: List[str] = extract_csv_tags(os.getenv("MCP_TOOL_TAGS"))
     MCP_ERROR_HELP_DISCORD_ID: int | None = int(value) if (value := os.getenv("MCP_ERROR_HELP_DISCORD_ID")) else None
 
-    MAX_TOKENS: int = int(os.getenv("MAX_TOKENS", 64000))
-    MAX_MESSAGE_COUNT: int = int(os.getenv("MAX_MESSAGE_COUNT", 3))
-    TOTAL_MESSAGE_SEARCH_COUNT: int = int(os.getenv("TOTAL_MESSAGE_SEARCH_COUNT", 20))
-    MAX_TOOL_CALLS: int = int(os.getenv("MAX_TOOL_CALLS", 30))
+    MAX_TOKENS: int = int(require_env("MAX_TOKENS"))
+    MAX_MESSAGE_COUNT: int = int(require_env("MAX_MESSAGE_COUNT"))
+    TOTAL_MESSAGE_SEARCH_COUNT: int = int(require_env("TOTAL_MESSAGE_SEARCH_COUNT"))
+    MAX_TOOL_CALLS: int = int(require_env("MAX_TOOL_CALLS"))
     DENY_RECURSIVE_TOOL_CALLING: bool = os.getenv("DENY_RECURSIVE_TOOL_CALLING", "").lower() == "true"
 
-    NAME: str = os.getenv("NAME", "Bot")
+    NAME: str = require_env("NAME")
     INSTRUCTIONS: str = os.getenv("INSTRUCTIONS", "")
-    LANGUAGE: Literal["de", "en"] = os.getenv("LANGUAGE", "de")
+    LANGUAGE: Literal["de", "en"] = require_env("LANGUAGE")
+    TIMEZONE: pytz.BaseTzInfo = pytz.timezone(require_env("TIMEZONE"))
     DISCORD_ID: int|None = int(value) if (value := os.getenv("DISCORD_ID")) else None
     USERNAMES_CSV_FILE_PATH: str|None = os.getenv("USERNAMES_PATH")
-    HISTORY_RESET_TEXT: str = os.getenv("HISTORY_RESET_TEXT", " --- ")
+    HISTORY_RESET_TEXT: str = require_env("HISTORY_RESET_TEXT")
 
-    COMMAND_NAME: str = os.getenv("COMMAND_NAME", "bot")
+    COMMAND_NAME: str = require_env("COMMAND_NAME")
 
 

@@ -4,7 +4,7 @@ import logging
 from typing import List, Dict
 
 import discord
-import pytz
+from babel.dates import format_time
 from discord.ext import commands
 from dotenv import load_dotenv
 import os
@@ -37,10 +37,8 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 match Config.AI:
     case "ollama":
-        pass
         llm = OllamaLLM()
     case "mistral":
-        pass
         llm = MistralLLM()
 
 
@@ -95,14 +93,14 @@ async def handle_message(message):
                                 reply = clean_reply(event.value)
                                 if not reply:
                                     return
-                                if len(reply) > 2000:
-                                    file = discord.File(io.BytesIO(reply.encode('utf-8')), filename=f"{bot.user.name}s Antwort.txt")
+                                if len(reply) > 2000: # Max message length for discord
+                                    file = discord.File(io.BytesIO(reply.encode('utf-8')), filename=f"{bot.user.name}.txt")
                                     await message.channel.send(file=file)
                                 else:
                                     await message.channel.send(reply)
 
                             else:
-                                raise Exception("Ungültiger DiscordMessage Typ")
+                                raise Exception("Invalid DiscordMessage Type")
 
                         except Exception as e:
                             logging.exception(e, exc_info=True)
@@ -118,8 +116,8 @@ async def handle_message(message):
                         break
 
                     role = "assistant" if msg.author == bot.user else "user"
-                    timestamp = msg.created_at.astimezone(pytz.timezone("Europe/Berlin")).strftime("%H:%M:%S")
-                    content = msg.content if msg.author == bot.user else f"<#Nachricht von <@{msg.author.id}> um {timestamp}> {msg.content}"
+                    timestamp = format_time(msg.created_at,  format='short', tzinfo=Config.TIMEZONE, locale=Config.LANGUAGE) # Adapt Timestamp Format to Timezone and Language
+                    content = msg.content if msg.author == bot.user else f"<#Message from <@{msg.author.id}> at {timestamp}> {msg.content}"
                     images = []
 
                     if msg.attachments:
@@ -137,14 +135,14 @@ async def handle_message(message):
 
                                 images.append(save_path)
 
-                                content += f"\n<#Bildname: {attachment.filename}>"
+                                content += f"\n<#Imagename: {attachment.filename}>"
                             elif attachment.content_type and "text" in attachment.content_type:
                                 text_bytes = await attachment.read()
                                 text_content = text_bytes.decode("utf-8")
 
-                                content += f"\n<#Dateiname: {attachment.filename}, ausgelesener Inhalt folgt:>\n{text_content}"
+                                content += f"\n<#Filename: {attachment.filename}, content follows:>\n{text_content}"
                             else:
-                                content += f"\n<#Dateiname: {attachment.filename}>"
+                                content += f"\n<#Filename: {attachment.filename}>"
 
                     if not content and not images:
                         continue
@@ -184,7 +182,7 @@ async def on_message(message: discord.Message):
         await handle_message(message)
     except Exception as e:
         logging.exception(e)
-        await message.reply(f"Fehler: {e}")
+        await message.reply(f"Error: {e}")
 
 
 @bot.event
