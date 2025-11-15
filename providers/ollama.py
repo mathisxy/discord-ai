@@ -67,7 +67,7 @@ class OllamaLLM(DefaultLLM):
 
                 logging.info(response)
 
-                tool_calls = [LLMToolCall(name=t.function.name, arguments=dict(t.function.arguments)) for t in response.message.tool_calls] if response.message.tool_calls else []
+                tool_calls = [LLMToolCall(id=t.id, name=t.function.name, arguments=dict(t.function.arguments)) for t in response.message.tool_calls] if response.message.tool_calls else []
 
                 return LLMResponse(text=response.message.content, tool_calls=tool_calls)
 

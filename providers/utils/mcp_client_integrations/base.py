@@ -7,7 +7,7 @@ from mcp import Tool
 from mcp.types import CallToolResult
 
 from core.discord_messages import DiscordMessage
-from providers.base import BaseLLM
+from providers.base import BaseLLM, LLMToolCall
 from providers.utils.chat import LLMChat
 
 
@@ -31,7 +31,7 @@ class MCPIntegration:
 
     # ---------- Tool Result Processing ----------
     async def process_tool_result(self,
-                                  name: str,
+                                  tool_call: LLMToolCall,
                                   result: CallToolResult,
                                   chat: LLMChat,
                                   ) -> bool:
@@ -46,9 +46,7 @@ class MCPIntegration:
 
             logging.info(result_str)
 
-            full_results = self.llm.construct_tool_call_results(name, result_str)
-
-            chat.history.append(full_results)
+            self.llm.add_tool_call_results_message(chat, tool_call, result_str)
 
             return True
 

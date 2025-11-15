@@ -1,4 +1,3 @@
-import asyncio
 import json
 from typing import List, Dict, Any
 from mistralai import Mistral
@@ -36,7 +35,7 @@ class MistralLLM(DefaultLLM):
 
         tool_calls = []
         if message.tool_calls:
-            tool_calls = [LLMToolCall(name=t.function.name, arguments=json.loads(t.function.arguments)) for t in message.tool_calls] if message.tool_calls else []
+            tool_calls = [LLMToolCall(id=t.id, name=t.function.name, arguments=json.loads(t.function.arguments)) for t in message.tool_calls] if message.tool_calls else []
 
         return LLMResponse(message.content, tool_calls)
 
@@ -55,17 +54,22 @@ class MistralLLM(DefaultLLM):
 #         return run_results.output_as_text
 
     @staticmethod
-    def construct_tool_call_message(tool_calls: List[LLMToolCall]) -> Dict[str, Any]:
+    def add_tool_call_message(chat: LLMChat, tool_calls: List[LLMToolCall]) -> None:
+        """Only used in case of non-integrated tool calling"""
 
-        return {"role": "system", "tool_calls": [
-            {"id": t.name, "arguments": t.arguments} for t in tool_calls
-        ]}
+        chat.history.append({"role": "assistant", "tool_calls": [
+            {"id": t.id, "type": "function", "function": {
+                "name": t.name,
+                "arguments": t.arguments
+            }
+        } for t in tool_calls
+        ]})
 
     @staticmethod
-    def construct_tool_call_results(name: str, content: str) -> Dict[str, str]:
+    def add_tool_call_results_message(chat: LLMChat, tool_call: LLMToolCall, content: str) -> None:
 
-        return {
+        chat.history.append({
             "role": "tool",
-            "tool_call_id": name,
+            "tool_call_id": tool_call.id,
             "content": f"#{content}"
-        }
+        })

@@ -4,7 +4,7 @@ import logging
 import pkgutil
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Dict, List, TYPE_CHECKING, Type, Any
+from typing import Dict, List, TYPE_CHECKING, Type
 
 from core.config import Config
 from core.discord_messages import DiscordMessage
@@ -17,6 +17,8 @@ if TYPE_CHECKING:
 
 @dataclass
 class LLMToolCall:
+    """Supports only calls of type function"""
+    id: str
     name: str
     arguments: Dict
 
@@ -62,10 +64,10 @@ class BaseLLM(ABC):
 
     @staticmethod
     @abstractmethod
-    def construct_tool_call_message(tool_calls: List[LLMToolCall]) -> Dict[str, Any]:
+    def add_tool_call_message(chat: LLMChat, tool_calls: List[LLMToolCall]) -> None:
         pass
 
     @staticmethod
     @abstractmethod
-    def construct_tool_call_results(name: str, content: str) -> Dict[str, str]:
+    def add_tool_call_results_message(chat: LLMChat, tool_call: LLMToolCall, content: str) -> None:
         pass

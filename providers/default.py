@@ -31,13 +31,15 @@ class DefaultLLM(BaseLLM):
 
 
     @staticmethod
-    def construct_tool_call_message(tool_calls: List[LLMToolCall]) -> Dict[str, Any]:
+    def add_tool_call_message( chat: LLMChat, tool_calls: List[LLMToolCall]) -> None:
 
-        return {"role": "system", "tool_calls": [
-            {"id": t.name, "arguments": t.arguments} for t in tool_calls
-        ]}
+        chat.history.append(
+            {"role": "system", "tool_calls": [
+                {"id": t.name, "arguments": t.arguments} for t in tool_calls
+            ]}
+        )
 
     @staticmethod
-    def construct_tool_call_results(name: str, content: str) -> Dict[str, str]:
+    def add_tool_call_results_message(chat: LLMChat, tool_call: LLMToolCall, content: str) -> None:
 
-        return {"role": "system", "id": name, "content": f"#{content}"}
+        chat.history.append({"role": "system", "id": tool_call.name, "content": f"#{content}"})

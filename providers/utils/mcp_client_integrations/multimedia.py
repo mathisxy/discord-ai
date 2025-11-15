@@ -12,6 +12,7 @@ from mcp.types import CallToolResult
 from core.config import Config
 from core.discord_messages import DiscordMessageFileTmp, DiscordMessageReplyTmp, \
     DiscordMessageProgressTmp, DiscordMessageFile
+from providers.base import LLMToolCall
 from providers.utils.chat import LLMChat
 from providers.utils.mcp_client_integrations.base import MCPIntegration
 
@@ -52,7 +53,7 @@ class MultimediaMCPIntegration(MCPIntegration):
 
     # ---------- Tool Result Processing ----------
     async def process_tool_result(self,
-                                  name: str,
+                                  tool_call: LLMToolCall,
                                   result: CallToolResult,
                                   chat: LLMChat,
                                   ) -> bool:
@@ -97,9 +98,7 @@ class MultimediaMCPIntegration(MCPIntegration):
 
             logging.info(result_str)
 
-            full_results = self.llm.construct_tool_call_results(name, result_str)
-
-            chat.history.append(full_results)
+            self.llm.add_tool_call_results_message(chat, tool_call, result_str)
 
             return True
 

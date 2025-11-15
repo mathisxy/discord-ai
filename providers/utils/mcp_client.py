@@ -5,6 +5,7 @@ import re
 from typing import List
 
 from fastmcp import Client
+from mcp.types import CallToolResult
 
 from core.config import Config
 from core.discord_messages import DiscordMessage, DiscordMessageReplyTmp, \
@@ -65,6 +66,7 @@ async def generate_with_mcp(llm: BaseLLM, chat: LLMChat, queue: asyncio.Queue[Di
             if deny_tools:
                 break
 
+
             try:
                 if Config.TOOL_INTEGRATION and response.tool_calls:
                     tool_calls = response.tool_calls
@@ -112,23 +114,10 @@ async def generate_with_mcp(llm: BaseLLM, chat: LLMChat, queue: asyncio.Queue[Di
 
                     logging.info(f"TOOL CALL: {tool_call}")
 
-                    name = tool_call.name
-                    arguments = tool_call.arguments
-
 
                     try:
 
-                        message = f"Das Tool **{name}** wird aufgerufen"
-                        formatted_args = "\n".join(f" - **{k}:** {v}" for k, v in arguments.items())
-                        if formatted_args:
-                            message += f":\n{formatted_args}"
-                        await queue.put(DiscordMessageReplyTmp(key=name, value=message))
-
-                        result = await client.call_tool(name, arguments)
-
-
-
-                        logging.info(f"Tool Call Result bekommen für {name}")
+                        result = await handle_tool_call(queue, client, tool_call)
 
                         if not result.content:
                             logging.warning("Kein Tool Result Content, manuelle Unterbrechung")
@@ -137,16 +126,16 @@ async def generate_with_mcp(llm: BaseLLM, chat: LLMChat, queue: asyncio.Queue[Di
                         else:
 
                             if use_integrated_tools:
-                                chat.history.append(llm.construct_tool_call_message([tool_call]))
+                                llm.add_tool_call_message(chat, [tool_call])
 
-                            run_again = await integration.process_tool_result(name, result, chat) or run_again
+                        run_again = await integration.process_tool_result(tool_call, result, chat) or run_again
 
                     except Exception as e:
                         logging.exception(e, exc_info=True)
 
                         if Config.MCP_ERROR_HELP_DISCORD_ID and use_help_bot:
                             await queue.put(DiscordMessageReplyTmpError(
-                                value=f"<@{Config.MCP_ERROR_HELP_DISCORD_ID}> Ein Fehler ist aufgetreten: {e}",
+                                value=f"<@{Config.MCP_ERROR_HELP_DISCORD_ID}> {e}",
                                 embed=False
                             ))
                             break
@@ -162,7 +151,7 @@ async def generate_with_mcp(llm: BaseLLM, chat: LLMChat, queue: asyncio.Queue[Di
                         finally:
                             await queue.put(DiscordMessageRemoveTmp(key="reasoning"))
 
-                        chat.history.append(llm.construct_tool_call_results(name, reasoning))
+                        llm.add_tool_call_results_message(chat, tool_call, reasoning)
 
                         tool_call_errors = True
 
@@ -177,6 +166,21 @@ async def generate_with_mcp(llm: BaseLLM, chat: LLMChat, queue: asyncio.Queue[Di
                 break
 
 
+async def handle_tool_call(queue: asyncio.Queue[DiscordMessage | None], client: Client, tool_call: LLMToolCall) -> CallToolResult:
+
+    message = f"Das Tool **{tool_call.name}** wird aufgerufen"
+    formatted_args = "\n".join(f" - **{k}:** {v}" for k, v in tool_call.arguments.items())
+    if formatted_args:
+        message += f":\n{formatted_args}"
+    await queue.put(DiscordMessageReplyTmp(key=tool_call.id, value=message))
+
+    result = await client.call_tool(tool_call.name, tool_call.arguments)
+
+    logging.info(f"Tool Call Result bekommen für {tool_call}")
+
+    return result
+
+
 def extract_custom_tool_calls(text: str) -> List[LLMToolCall]:
     tool_calls = []
     pattern = r'```tool(.*?)```'
@@ -186,10 +190,10 @@ def extract_custom_tool_calls(text: str) -> List[LLMToolCall]:
         raw_json = raw.strip()
         try:
             tool_call_data = json.loads(raw_json)
-            llm_tool_call = LLMToolCall(tool_call_data.get("name"), tool_call_data.get("arguments", []))
+            llm_tool_call = LLMToolCall("test", tool_call_data.get("name"), tool_call_data.get("arguments", []))
             tool_calls.append(llm_tool_call)
         except json.JSONDecodeError as e:
-            raise Exception(f"Fehler beim JSON Dekodieren des Tool Calls: {e}")
+            raise Exception(f"Error JSON-decoding Tool Calls: {e}")
 
     return tool_calls
 
