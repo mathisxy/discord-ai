@@ -7,5 +7,5 @@ def setup_logging():
         filename="bot.log",
         level=Config.LOGLEVEL,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        force=True  # Python 3.8+
+        force=True
     )

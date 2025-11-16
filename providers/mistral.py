@@ -33,8 +33,8 @@ class MistralLLM(DefaultLLM):
         return LLMResponse(message.content, tool_calls)
 
 
-    @staticmethod
-    def add_tool_call_message(chat: LLMChat, tool_calls: List[LLMToolCall]) -> None:
+    @classmethod
+    def add_tool_call_message(cls, chat: LLMChat, tool_calls: List[LLMToolCall]) -> None:
         """Only used in case of non-integrated tool calling"""
 
         chat.history.append({"role": "assistant", "tool_calls": [
@@ -45,8 +45,8 @@ class MistralLLM(DefaultLLM):
         } for t in tool_calls
         ]})
 
-    @staticmethod
-    def add_tool_call_results_message(chat: LLMChat, tool_call: LLMToolCall, content: str) -> None:
+    @classmethod
+    def add_tool_call_results_message(cls, chat: LLMChat, tool_call: LLMToolCall, content: str) -> None:
 
         chat.history.append({
             "role": "tool",

@@ -5,7 +5,8 @@ import discord
 from core.config import Config
 
 
-def use_help_bot(message: discord.Message):
+def use_help_bot(message: discord.Message) -> bool:
+    """Indicates weither the external help bot should be called on mcp errors"""
 
     if isinstance(message.channel, discord.TextChannel):
 

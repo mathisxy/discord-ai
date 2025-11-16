@@ -1,22 +1,23 @@
 import asyncio
 import io
 import logging
-from typing import List, Dict
+import os
+from typing import List, Literal
 
 import discord
 from babel.dates import format_time
 from discord.ext import commands
 from dotenv import load_dotenv
-import os
 
+from core.chat_history import ChatHistoryFile, ChatHistoryMessage, ChatHistoryFileSaved, ChatHistoryFileText
 from core.config import Config
-from core.external_help_bot import use_help_bot
-from core.instructions import get_instructions_from_discord_info
-from core.message_handling import clean_reply
-from core.logging_config import setup_logging
 from core.discord_buttons import ProgressButton
 from core.discord_messages import DiscordMessage, DiscordMessageFile, DiscordMessageReply, \
     DiscordMessageTmpMixin, DiscordTemporaryMessagesController, DiscordMessageReplyTmpError
+from core.external_help_bot import use_help_bot
+from core.instructions import get_instructions_from_discord_info
+from core.logging_config import setup_logging
+from core.message_handling import clean_reply
 from providers.azure import AzureLLM
 from providers.mistral import MistralLLM
 from providers.ollama import OllamaLLM
@@ -45,7 +46,7 @@ match Config.AI:
         llm = OllamaLLM()
 
 
-async def call_ai(history: List[Dict], instructions: str, queue: asyncio.Queue[DiscordMessage|None], channel: str, use_help_bot: bool = True):
+async def call_ai(history: List[ChatHistoryMessage], instructions: ChatHistoryMessage, queue: asyncio.Queue[DiscordMessage|None], channel: str, use_help_bot: bool = True):
     try:
         await llm.call(history, instructions, queue, channel, use_help_bot)
     except Exception as e:
@@ -118,39 +119,42 @@ async def handle_message(message):
                     if len(history) >= Config.MAX_MESSAGE_COUNT:
                         break
 
-                    role = "assistant" if msg.author == bot.user else "user"
+                    role: Literal["user", "assistant"] = "assistant" if msg.author == bot.user else "user"
                     timestamp = format_time(msg.created_at,  format='short', tzinfo=Config.TIMEZONE, locale=Config.LANGUAGE) # Adapt Timestamp Format to Timezone and Language
-                    content = msg.content if msg.author == bot.user else f"<#Message from <@{msg.author.id}> at {timestamp}> {msg.content}"
-                    images = []
+                    content = msg.content if msg.author == bot.user else f"<#Message from=\"<@{msg.author.id}>\" at=\"{timestamp}\"> {msg.content}"
+                    files = []
 
                     if msg.attachments:
                         for attachment in msg.attachments:
 
-                            if attachment.content_type and Config.AI == "ollama" and Config.OLLAMA_IMAGE_MODEL and attachment.content_type in Config.OLLAMA_IMAGE_MODEL_TYPES: # TODO Modularize
+                            if attachment.content_type and Config.OLLAMA_IMAGE_MODEL and attachment.content_type in Config.OLLAMA_IMAGE_MODEL_TYPES: # TODO Modularize
                                 image_bytes = await attachment.read()
-                                image_filename = attachment.filename
 
-                                save_path = os.path.join("downloads", image_filename)
+                                save_path = os.path.join("downloads", attachment.filename)
                                 os.makedirs("downloads", exist_ok=True)
 
                                 with open(save_path, "wb") as f:
                                     f.write(image_bytes)
 
-                                images.append(save_path)
+                                files.append(ChatHistoryFileSaved(attachment.filename, attachment.content_type, save_path))
 
-                                content += f"\n<#Imagename: {attachment.filename}>"
+                                # content += f"\n<#Imagename: {attachment.filename}>"
                             elif attachment.content_type and "text" in attachment.content_type:
                                 text_bytes = await attachment.read()
                                 text_content = text_bytes.decode("utf-8")
 
-                                content += f"\n<#Filename: {attachment.filename}, content follows:>\n{text_content}"
-                            else:
-                                content += f"\n<#Filename: {attachment.filename}>"
+                                files.append(ChatHistoryFileText(attachment.filename, attachment.content_type, text_content))
 
-                    if not content and not images:
+                                # content += f"\n<#Filename: {attachment.filename}, content follows:>\n{text_content}"
+                            else:
+                                files.append(ChatHistoryFile(attachment.filename, attachment.content_type))
+                                # content += f"\n<#Filename: {attachment.filename}>"
+
+                    if not content and not files:
                         continue
 
-                    history.append({"role": role, "content": content, **({"images": images} if images else {})})
+                    history.append(ChatHistoryMessage(role=role, content=content, files=files))
+                    # history.append({"role": role, "content": content, **({"images": images} if images else {})})
 
                 history.reverse() # Hoffentlich nicht
 
@@ -159,12 +163,13 @@ async def handle_message(message):
 
                 channel_name = message.author.display_name if isinstance(message.channel, discord.DMChannel) else message.channel.name
 
-                instructions = get_instructions_from_discord_info(message)
+                instructions = ChatHistoryMessage(role="system", content="")
 
-                instructions += Config.INSTRUCTIONS
+                instructions.content += get_instructions_from_discord_info(message)
+                instructions.content += Config.INSTRUCTIONS
 
-                instructions = instructions.replace("[#NAME]", Config.NAME)
-                instructions = instructions.replace("[#DISCORD_ID]", str(Config.DISCORD_ID))
+                instructions.content = instructions.content.replace("[#NAME]", Config.NAME)
+                instructions.content = instructions.content.replace("[#DISCORD_ID]", str(Config.DISCORD_ID))
 
                 logging.info(instructions)
 

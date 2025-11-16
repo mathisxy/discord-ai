@@ -4,6 +4,7 @@ from typing import List, Dict, Literal
 
 import tiktoken
 
+from core.chat_history import ChatHistoryMessage, ChatHistoryFileSaved
 from core.config import Config
 from core.discord_messages import DiscordMessage, DiscordMessageReply
 from providers.default import DefaultLLM, LLMResponse, LLMToolCall
@@ -14,13 +15,14 @@ from providers.utils.vram import wait_for_vram
 
 class OllamaLLM(DefaultLLM):
 
-    async def call(self, history: List[Dict[str, str]], instructions: str, queue: asyncio.Queue[DiscordMessage | None],
+    async def call(self, history: List[ChatHistoryMessage], instructions: ChatHistoryMessage, queue: asyncio.Queue[DiscordMessage | None],
                    channel: str, use_help_bot=False):
 
         self.chats.setdefault(channel, LLMChat())
 
-        instructions_entry = {"role": "system", "content": instructions}
-        self.chats[channel].update_history(history, instructions_entry)
+        formatted_history = [self.format_history_entry(entry) for entry in history]
+        instructions_entry = self.format_history_entry(instructions)
+        self.chats[channel].update_history(formatted_history, instructions_entry)
 
         logging.debug(self.chats[channel].history)
 
@@ -35,8 +37,8 @@ class OllamaLLM(DefaultLLM):
 
 
 
-    @staticmethod
-    async def generate(chat: LLMChat, model_name: str | None = None, temperature: str | None = None, think: bool | Literal["low", "medium", "high"] | None = None, keep_alive: str | float | None = None, timeout: float | None = None, tools: List[Dict] | None = None) -> LLMResponse:
+    @classmethod
+    async def generate(cls, chat: LLMChat, model_name: str | None = None, temperature: str | None = None, think: bool | Literal["low", "medium", "high"] | None = None, keep_alive: str | float | None = None, timeout: float | None = None, tools: List[Dict] | None = None) -> LLMResponse:
 
         await wait_for_vram(required_gb=11)
 
@@ -78,4 +80,18 @@ class OllamaLLM(DefaultLLM):
 
 
 
+    @classmethod
+    def format_history_entry(cls, entry: ChatHistoryMessage):
+        formatted_entry = super().format_history_entry(entry)
 
+        for file in entry.files:
+            logging.info(file)
+            if isinstance(file, ChatHistoryFileSaved):
+                logging.info(f"Found saved file entry in history: {file}")
+                if file.type in Config.OLLAMA_IMAGE_MODEL_TYPES:
+                    logging.info(f"Is image")
+                    formatted_entry.setdefault("images", []).append(file.save_path)
+
+        logging.info(formatted_entry)
+
+        return formatted_entry

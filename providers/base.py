@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Dict, List, TYPE_CHECKING, Type
 
+from core.chat_history import ChatHistoryMessage
 from core.config import Config
 from core.discord_messages import DiscordMessage
 from providers.utils import mcp_client_integrations
@@ -36,7 +37,7 @@ class BaseLLM(ABC):
 
 
     @abstractmethod
-    async def call(self, history: List[Dict], instructions: str, queue: asyncio.Queue[DiscordMessage | None], channel: str, use_help_bot=False):
+    async def call(self, history: List[ChatHistoryMessage], instructions: ChatHistoryMessage, queue: asyncio.Queue[DiscordMessage | None], channel: str, use_help_bot=False):
         pass
 
 
@@ -45,8 +46,8 @@ class BaseLLM(ABC):
         pass
 
 
-    @staticmethod
-    def load_mcp_integration_class():
+    @classmethod
+    def load_mcp_integration_class(cls):
 
         class_name = Config.MCP_INTEGRATION_CLASS
 
@@ -62,17 +63,22 @@ class BaseLLM(ABC):
         return MCPIntegration
 
 
-    @staticmethod
+    @classmethod
     @abstractmethod
-    def add_tool_call_message(chat: LLMChat, tool_calls: List[LLMToolCall]) -> None:
+    def format_history_entry(cls, entry: ChatHistoryMessage):
         pass
 
-    @staticmethod
+    @classmethod
     @abstractmethod
-    def add_tool_call_results_message(chat: LLMChat, tool_call: LLMToolCall, content: str) -> None:
+    def add_tool_call_message(cls, chat: LLMChat, tool_calls: List[LLMToolCall]) -> None:
         pass
 
-    @staticmethod
+    @classmethod
     @abstractmethod
-    def extract_custom_tool_call(text: str) -> LLMToolCall:
+    def add_tool_call_results_message(cls, chat: LLMChat, tool_call: LLMToolCall, content: str) -> None:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def extract_custom_tool_call(cls, text: str) -> LLMToolCall:
         pass
