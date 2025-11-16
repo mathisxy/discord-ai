@@ -14,7 +14,7 @@ This project implements a custom **Discord Bot** with integrated **LLM Backend**
 
 <br>
 
-## ⚙️ Installation
+## ⚙️ Installation on Linux
 
 1. 📦 Clone Repository:
    ```bash
@@ -25,16 +25,9 @@ This project implements a custom **Discord Bot** with integrated **LLM Backend**
    Make sure that **Python 3.12+** is installed\
    Create and activate a Python Virtual Environment:
 
-   **Linux / macOS**
    ```bash
    python3 -m venv venv
    source venv/bin/activate
-   ```
-
-   **Windows (PowerShell)**
-   ```powershell
-   python -m venv venv
-   .\venv\Scripts\Activate.ps1
    ```
    
    Afterwards install the requirements:
