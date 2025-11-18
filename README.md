@@ -1,8 +1,17 @@
-# LLM Discord Bot
+# Discord AI Bot
 
 
-This project implements a custom **Discord Bot** with integrated **LLM Backend** and optional tool calling via **MCP Integration**.
+This project implements a custom **Discord Bot** with integrated **AI Backend** and optional tool calling via **MCP Integration**.
 > Under development, not feature complete.
+
+<br>
+
+## Features
+ - Text with AI over Discord
+ - Customizability via `.env` file
+ - Modular design for easy integration of AI models
+ - Tool calling via MCP
+ - Custom MCP integrations
 
 <br>
 
@@ -47,24 +56,17 @@ This project implements a custom **Discord Bot** with integrated **LLM Backend**
       nano .env
       ```
 
-   **Option 2: Interactive with `minimal_setup.py`**  
-   1. Make sure `minimal_setup.py` is in your project directory.  
+   **Option 2: Interactive**  
+   1. Make sure `setup_env.py` is in your project directory.  
    2. Run the setup script:  
       ```bash
-      python minimal_setup.py
+      python setup_env.py
       ```
    3. Follow the prompts.  
-      At the end, the script will ask whether you want to generate a systemd service:
 
-      - **Yes:**  
-        The script creates a `.env.{BotName}` file and a matching `{BotName}.service` systemd file.
-
-      - **No:**  
-         The script simply creates a standard `.env` file for direct use.
-
-   4. You can always rename the generated `.env.{BotName}` to `.env` if needed:
+   4. For direct use via commandline rename the generated `.env.{botname}` to `.env` if needed:
       ```bash
-      cp .env.Emanuel .env
+      cp .env.emanuel .env
       ```
    
    >Tip: Creating the systemd service allows your bot to run in the background and start automatically on boot.
@@ -75,10 +77,10 @@ This project implements a custom **Discord Bot** with integrated **LLM Backend**
    ```
    or
    ```bash
-   sudo cp {BotName}.service /etc/systemd/system/
+   sudo cp {botname}.service /etc/systemd/system/
    sudo systemctl daemon-reload
-   sudo systemctl start {BotName}
-   sudo systemctl enable {BotName}
+   sudo systemctl start {botname}
+   sudo systemctl enable {botname}
    ```
 
 
