@@ -7,17 +7,16 @@ from core.config import Config
 from providers.default import DefaultLLM, LLMResponse, LLMToolCall
 from providers.utils.chat import LLMChat
 
-client = Mistral(api_key=Config.MISTRAL_API_KEY)
-
 class MistralLLM(DefaultLLM):
 
+    client = Mistral(api_key=Config.MISTRAL_API_KEY)
 
     async def generate(self, chat: LLMChat, model_name: str | None = None, temperature: float | None = None,
                        timeout: float | None = None, tools: List[Dict] | None = None) -> LLMResponse:
 
         model_name = model_name if model_name else Config.MISTRAL_MODEL
 
-        response = await client.chat.complete_async(
+        response = await self.client.chat.complete_async(
             model=model_name,
             messages=chat.history,
             temperature=temperature,

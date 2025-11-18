@@ -91,7 +91,7 @@ class Config:
     OLLAMA_IMAGE_MODEL: bool = os.getenv("OLLAMA_IMAGE_MODEL", "").lower() == "true"
     OLLAMA_IMAGE_MODEL_TYPES: List[str] = extract_csv_tags(require_env("OLLAMA_IMAGE_MODEL_TYPES"))
     OLLAMA_REQUIRED_VRAM_IN_GB: float | int | None = int(value) if (value := os.getenv("OLLAMA_REQUIRED_VRAM_IN_GB")) else None
-    OLLAMA_WAIT_FOR_REQUIRED_VRAM: float | int | None = extract_duration(os.getenv("OLLAMA_WAIT_FOR_REQUIRED_VRAM"))
+    OLLAMA_WAIT_FOR_REQUIRED_VRAM: float | int = extract_duration(require_env("OLLAMA_WAIT_FOR_REQUIRED_VRAM"))
 
     TOOL_INTEGRATION: bool = os.getenv("TOOL_INTEGRATION", "").lower() == "true"
     MCP_SERVER_URL: str|None = os.getenv("MCP_SERVER_URL")

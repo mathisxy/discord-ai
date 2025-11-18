@@ -8,17 +8,14 @@ from core.config import Config
 from providers.default import DefaultLLM, LLMResponse, LLMToolCall
 from providers.utils.chat import LLMChat
 
-# ------------------------------
-# Azure OpenAI Client
-# ------------------------------
-client = AsyncAzureOpenAI(
-    azure_endpoint=Config.AZURE_OPENAI_ENDPOINT,
-    api_key=Config.AZURE_OPENAI_API_KEY,
-    api_version=Config.AZURE_OPENAI_API_VERSION,
-)
 
 class AzureLLM(DefaultLLM):
 
+    client = AsyncAzureOpenAI(
+        azure_endpoint=Config.AZURE_OPENAI_ENDPOINT,
+        api_key=Config.AZURE_OPENAI_API_KEY,
+        api_version=Config.AZURE_OPENAI_API_VERSION,
+    )
 
     async def generate(self, chat: LLMChat, model_name: str | None = None, temperature: float | None = None,
                        timeout: float | None = None, tools: List[Dict] | None = None) -> LLMResponse:
@@ -28,7 +25,7 @@ class AzureLLM(DefaultLLM):
 
         logging.info(temperature)
 
-        completion = await client.chat.completions.create(
+        completion = await self.client.chat.completions.create(
             model=model_name,
             messages=chat.history,
             temperature=temperature,

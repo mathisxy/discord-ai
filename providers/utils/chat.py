@@ -11,18 +11,16 @@ from core.config import Config
 
 class LLMChat:
 
-    client: AsyncClient
-    lock: asyncio.Lock
+    client: AsyncClient|None
     history: List[Dict[str, str]]
     tokenizer: tiktoken
 
     max_tokens = 3700 if len(GPUtil.getGPUs()) == 0 else Config.MAX_TOKENS
     logging.debug(f"MAX TOKENS: {max_tokens}")
 
-    def __init__(self):
+    def __init__(self, client=None):
 
-        self.client = AsyncClient(host=Config.OLLAMA_URL)
-        self.lock = asyncio.Lock()
+        self.client = client
         self.history = []
         self.tokenizer = tiktoken.get_encoding("cl100k_base")
 
@@ -58,24 +56,23 @@ class LLMChat:
                 break
 
         if not overlap_length:
-            logging.info("KEIN OVERLAP")
+            logging.info("NO OVERLAP")
             logging.info(self.history)
             logging.info(new_history)
             self.history = [instructions_entry] if instructions_entry else []
             self.history.extend(new_history)
-        elif instructions_entry:
-            if self.history[0] == instructions_entry:
-                self.history = self.history + new_history[overlap_length:]
-            else:
-                logging.info("NEW INSTRUCTIONS")
-                logging.info(self.history[0])
-                logging.info(instructions_entry)
-                self.history = [instructions_entry]
-                self.history.extend(new_history)
         else:
+
+            if instructions_entry and self.system_entry != instructions_entry:
+                logging.info("UPDATING INSTRUCTIONS")
+                logging.info(self.system_entry)
+                logging.info(instructions_entry)
+                self.system_entry = instructions_entry
+
             self.history = self.history + new_history[overlap_length:]
 
-        logging.info(self.count_tokens())
+        logging.info(f"TOKEN COUNT: {self.count_tokens()}")
+        logging.info(f"SYSTEM MESSAGE TOKEN COUNT: {self.count_tokens(history=[self.system_entry])}")
 
         if self.count_tokens() > self.max_tokens:
             logging.info("CUTTING BECAUSE OF EXCEEDING TOKEN COUNT")
@@ -83,6 +80,8 @@ class LLMChat:
 
 
     def build_prompt(self, history=None) -> str:
+        """Only builds role and content"""
+
         if history is None:
             history = self.history
 

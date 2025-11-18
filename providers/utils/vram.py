@@ -10,6 +10,7 @@ def check_free_vram(required_gb:float=8):
     info = pynvml.nvmlDeviceGetMemoryInfo(handle)
     free_gb = info.free / 1024**3
     if free_gb < required_gb:
+        logging.warning(f"NOT Enough VRAM: {free_gb:.2f} GB free, {required_gb} GB required")
         raise RuntimeError(f"Not enough VRAM: {free_gb:.2f} GB free, {required_gb} GB required")
     logging.info(f"Enough VRAM: {free_gb:.2f} GB free, {required_gb} GB required")
 

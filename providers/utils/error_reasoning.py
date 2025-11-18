@@ -62,7 +62,6 @@ Erkläre dann klar und möglichst knapp wie der Fehler entstanden ist und wie er
     logging.info(context)
 
     reasoning_chat = LLMChat()
-    reasoning_chat.lock = chat.lock
     reasoning_chat.history.append({"role": "system", "content": context})
 
     reasoning = await llm.generate(reasoning_chat)

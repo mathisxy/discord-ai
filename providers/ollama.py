@@ -4,14 +4,13 @@ import random
 import string
 from typing import List, Dict, Literal, Any
 
-import tiktoken
+from ollama import AsyncClient
 
 from core.chat_history import ChatHistoryMessage, ChatHistoryFileSaved
 from core.config import Config
-from core.discord_messages import DiscordMessage, DiscordMessageReply
+from core.discord_messages import DiscordMessage
 from providers.default import DefaultLLM, LLMResponse, LLMToolCall
 from providers.utils.chat import LLMChat
-from providers.utils.mcp_client import generate_with_mcp
 from providers.utils.vram import wait_for_vram
 
 
@@ -20,22 +19,9 @@ class OllamaLLM(DefaultLLM):
     async def call(self, history: List[ChatHistoryMessage], instructions: ChatHistoryMessage, queue: asyncio.Queue[DiscordMessage | None],
                    channel: str, use_help_bot=False):
 
-        self.chats.setdefault(channel, LLMChat())
+        self.chats.setdefault(channel, LLMChat(AsyncClient(host=Config.OLLAMA_URL)))
 
-        formatted_history = [self.format_history_entry(entry) for entry in history]
-        instructions_entry = self.format_history_entry(instructions)
-        self.chats[channel].update_history(formatted_history, instructions_entry)
-
-        logging.debug(self.chats[channel].history)
-
-        enc = tiktoken.get_encoding("cl100k_base")  # GPT-like Tokenizer
-        logging.info(f"System Message Tokens: {len(enc.encode(self.chats[channel].system_entry["content"]))}")
-
-        if Config.MCP_SERVER_URL:
-            await generate_with_mcp(self, self.chats[channel], queue, use_help_bot)
-        else:
-            response = await self.generate(self.chats[channel])
-            await queue.put(DiscordMessageReply(value=response.text))
+        await super().call(history, instructions, queue, channel, use_help_bot)
 
 
 
@@ -53,35 +39,35 @@ class OllamaLLM(DefaultLLM):
         keep_alive = keep_alive if keep_alive else Config.OLLAMA_KEEP_ALIVE
         timeout = timeout if timeout else Config.OLLAMA_TIMEOUT
 
-        async with (chat.lock):
+        # async with (chat.lock):
 
-            try:
+        try:
 
-                response = await asyncio.wait_for(
-                    chat.client.chat(
-                        model=model_name,
-                        messages=chat.history,
-                        stream=False,
-                        keep_alive=keep_alive,
-                        options={
-                            **({"temperature": temperature} if temperature is not None else {})
-                        },
-                        **({"think": think} if think is not None else {}),
-                        **({"tools": tools} if tools is not None else {}),
-                    ),
-                    timeout=timeout,
-                )
+            response = await asyncio.wait_for(
+                chat.client.chat(
+                    model=model_name,
+                    messages=chat.history,
+                    stream=False,
+                    keep_alive=keep_alive,
+                    options={
+                        **({"temperature": temperature} if temperature is not None else {})
+                    },
+                    **({"think": think} if think is not None else {}),
+                    **({"tools": tools} if tools is not None else {}),
+                ),
+                timeout=timeout,
+            )
 
-                logging.info(response)
+            logging.info(response)
 
-                tool_calls = [LLMToolCall(id=''.join(random.choices(string.digits, k=9)),name=t.function.name, arguments=dict(t.function.arguments)) for t in response.message.tool_calls] if response.message.tool_calls else []
+            tool_calls = [LLMToolCall(id=''.join(random.choices(string.digits, k=9)),name=t.function.name, arguments=dict(t.function.arguments)) for t in response.message.tool_calls] if response.message.tool_calls else []
 
-                return LLMResponse(text=response.message.content, tool_calls=tool_calls)
+            return LLMResponse(text=response.message.content, tool_calls=tool_calls)
 
 
-            except Exception as e:
-                logging.error(e, exc_info=True)
-                raise Exception(f"Ollama Error: {e}")
+        except Exception as e:
+            logging.error(e, exc_info=True)
+            raise Exception(f"Ollama Error: {e}")
 
 
 
