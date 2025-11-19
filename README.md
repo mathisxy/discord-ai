@@ -19,6 +19,8 @@ This project implements a custom **Discord Bot** with integrated **AI Backend** 
 
 [![Mistral](https://img.shields.io/badge/Mistral-Supported-brightgreen)](https://mistral.ai/)
 [![Azure OpenAI](https://img.shields.io/badge/Azure_OpenAI-Supported-brightgreen)](https://ai.azure.com)
+[![Gemini](https://img.shields.io/badge/Gemini-Supported-brightgreen)](https://ai.azure.com)
+[![OpenAI](https://img.shields.io/badge/OpenAI-Supported-brightgreen)](https://ai.azure.com)
 [![Ollama](https://img.shields.io/badge/Ollama-Supported-brightgreen)](https://ollama.com/)
 
 <br>
@@ -71,17 +73,31 @@ This project implements a custom **Discord Bot** with integrated **AI Backend** 
    
    
 6. ▶️ Start Bot
+
+   **Option 1: In the commandline**
    ```bash
    python main.py
    ```
-   or create a systemd service:
-   ```bash
-   sudo cp {botname}.service /etc/systemd/system/
-   sudo systemctl daemon-reload
-   sudo systemctl start {botname}
-   sudo systemctl enable {botname}
-   ```
+   **Option 2: As a systemd service**
+    - ✅ Create and activate:
+    ```bash
+    sudo cp {botname}.service /etc/systemd/system/
+    sudo systemctl daemon-reload
+    sudo systemctl start {botname}
+    sudo systemctl enable {botname}
+    ```   
+
+    - ❌ Stop and remove:
+    ```bash
+    sudo systemctl stop {botname}
+    sudo systemctl disable {botname}
+    sudo rm /etc/systemd/system/{botname}.service
+    sudo systemctl daemon-reload
+    sudo systemctl reset-failed
+    ```
+
    >Tip: Creating a systemd service allows your bot to run in the background and start automatically on boot.
+
 
 
 <br>
