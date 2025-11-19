@@ -76,7 +76,9 @@ class LLMChat:
 
         if self.count_tokens() > self.max_tokens:
             logging.info("CUTTING BECAUSE OF EXCEEDING TOKEN COUNT")
-            self.history = new_history
+            self.history = [instructions_entry] if instructions_entry else []
+            self.history.extend(new_history)
+            logging.info(self.history)
 
 
     def build_prompt(self, history=None) -> str:
@@ -88,7 +90,13 @@ class LLMChat:
         prompt_lines = []
         for msg in history:
             role = msg.get("role", "user")
-            content = msg.get("content", "")
+            content = msg.get("content")
+            if isinstance(content, List): # Format {content: [{"type": "text", "text": "..."}]}
+                content = [c.get("text") for c in content if c.get("type") == "text"]
+                if content:
+                    content = content[0]
+                else:
+                    content = ""
             prompt_lines.append(f"{role}: {content}")
         return "\n".join(prompt_lines)
 

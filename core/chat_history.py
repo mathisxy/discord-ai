@@ -1,17 +1,18 @@
 from dataclasses import dataclass, field
 from typing import Literal
+from pathlib import Path
 
 
 @dataclass
 class ChatHistoryFile:
 
     name: str
-    type: str
+    mime_type: str
 
 @dataclass
 class ChatHistoryFileSaved(ChatHistoryFile):
 
-    save_path: str
+    save_path: Path
 
 @dataclass
 class ChatHistoryFileText(ChatHistoryFile):

@@ -96,7 +96,7 @@ class OllamaLLM(DefaultLLM):
             logging.info(file)
             if isinstance(file, ChatHistoryFileSaved):
                 logging.info(f"Found saved file entry in history: {file}")
-                if file.type in Config.OLLAMA_IMAGE_MODEL_TYPES:
+                if file.mime_type in Config.OLLAMA_IMAGE_MODEL_TYPES:
                     logging.info(f"Is image")
                     formatted_entry.setdefault("images", []).append(file.save_path)
 

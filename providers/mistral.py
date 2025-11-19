@@ -1,11 +1,16 @@
+import base64
+import base64
 import json
-from typing import List, Dict
+import logging
+from typing import List, Dict, Any
 
 from mistralai import Mistral
 
+from core.chat_history import ChatHistoryMessage, ChatHistoryFileSaved
 from core.config import Config
 from providers.default import DefaultLLM, LLMResponse, LLMToolCall
 from providers.utils.chat import LLMChat
+
 
 class MistralLLM(DefaultLLM):
 
@@ -37,22 +42,36 @@ class MistralLLM(DefaultLLM):
         chat.history.append({"role": "user", "content": message})
 
     @classmethod
-    def add_tool_call_message(cls, chat: LLMChat, tool_calls: List[LLMToolCall]) -> None:
+    def format_history_entry(cls, entry: ChatHistoryMessage) -> Dict[str, Any]:
+        formatted_entry = super().format_history_entry(entry)
 
-        if Config.TOOL_INTEGRATION:
-            chat.history.append({"role": "assistant", "tool_calls": [
-                {"id": t.id, "type": "function", "function": {
-                    "name": t.name,
-                    "arguments": t.arguments
-                }
-            } for t in tool_calls
-            ]})
+        image_urls = []
 
-    @classmethod
-    def add_tool_call_results_message(cls, chat: LLMChat, tool_call: LLMToolCall, content: str) -> None:
+        for file in entry.files:
+            logging.info(file)
+            if isinstance(file, ChatHistoryFileSaved):
+                logging.info(f"Found saved file entry in history: {file}")
+                if file.mime_type in Config.MISTRAL_IMAGE_MODEL_TYPES:
+                    logging.info(f"Is image")
+                    with open(file.save_path, "rb") as f:
+                        b64 = base64.b64encode(f.read()).decode("utf-8")
+                        image_urls.append(f"data:{file.mime_type};base64,{b64}")
 
-        chat.history.append({
-            "role": "tool",
-            "tool_call_id": tool_call.id,
-            "content": f"#{content}"
-        })
+        if image_urls:
+            if formatted_entry.get("content"):
+                formatted_entry["content"] = [{
+                    "type": "text",
+                    "text": formatted_entry["content"],
+                }]
+            else:
+                formatted_entry["content"] = []
+
+            for image_url in image_urls:
+                formatted_entry["content"].append({
+                    "type": "image_url",
+                    "image_url": image_url,
+                })
+
+        logging.info(formatted_entry)
+
+        return formatted_entry

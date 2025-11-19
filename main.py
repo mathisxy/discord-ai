@@ -4,13 +4,13 @@ import logging
 import os
 from datetime import datetime
 from typing import List, Literal
-
+from pathlib import Path
 import discord
-from babel.dates import format_time, format_datetime, format_date
+from babel.dates import format_time, format_date
 from discord.ext import commands
 from dotenv import load_dotenv
 
-from core.chat_history import ChatHistoryFile, ChatHistoryMessage, ChatHistoryFileSaved, ChatHistoryFileText
+from core.chat_history import ChatHistoryFile, ChatHistoryMessage, ChatHistoryFileSaved
 from core.config import Config
 from core.discord_buttons import ProgressButton
 from core.discord_messages import DiscordMessage, DiscordMessageFile, DiscordMessageReply, \
@@ -55,6 +55,7 @@ match Config.AI:
 
 async def call_ai(history: List[ChatHistoryMessage], instructions: ChatHistoryMessage, queue: asyncio.Queue[DiscordMessage|None], channel: str, use_help_bot: bool = True):
     try:
+        logging.info(llm)
         await llm.call(history, instructions, queue, channel, use_help_bot)
     except Exception as e:
         logging.exception(e, exc_info=True)
@@ -67,8 +68,20 @@ async def call_ai(history: List[ChatHistoryMessage], instructions: ChatHistoryMe
 def is_relevant_message(message: discord.Message) -> bool:
     return bot.user in message.mentions or isinstance(message.channel, discord.DMChannel)
 
+async def save_file(attachment: discord.Attachment) -> ChatHistoryFileSaved:
 
-async def handle_message(message):
+    image_bytes = await attachment.read()
+
+    os.makedirs(Config.DOWNLOAD_FOLDER, exist_ok=True)
+
+    with open(Config.DOWNLOAD_FOLDER / attachment.filename, "wb") as f:
+        f.write(image_bytes)
+
+    return ChatHistoryFileSaved(attachment.filename, attachment.content_type, Config.DOWNLOAD_FOLDER / attachment.filename)
+
+
+
+async def handle_message(message: discord.Message):
     if message.author == bot.user:
         return
 
@@ -134,24 +147,16 @@ async def handle_message(message):
                     if msg.attachments:
                         for attachment in msg.attachments:
 
-                            if attachment.content_type and Config.OLLAMA_IMAGE_MODEL and attachment.content_type in Config.OLLAMA_IMAGE_MODEL_TYPES: # TODO Modularize
-                                image_bytes = await attachment.read()
-
-                                save_path = os.path.join("downloads", attachment.filename)
-                                os.makedirs("downloads", exist_ok=True)
-
-                                with open(save_path, "wb") as f:
-                                    f.write(image_bytes)
-
-                                files.append(ChatHistoryFileSaved(attachment.filename, attachment.content_type, save_path))
-
-                            elif attachment.content_type and "text" in attachment.content_type:
-                                text_bytes = await attachment.read()
-                                text_content = text_bytes.decode("utf-8")
-
-                                files.append(ChatHistoryFileText(attachment.filename, attachment.content_type, text_content))
-                            else:
-                                files.append(ChatHistoryFile(attachment.filename, attachment.content_type))
+                            if attachment.content_type:
+                                match Config.AI:
+                                    case "mistral":
+                                        if Config.MISTRAL_IMAGE_MODEL and attachment.content_type in Config.MISTRAL_IMAGE_MODEL_TYPES:
+                                            files.append(await save_file(attachment))
+                                    case "ollama":
+                                        if Config.OLLAMA_IMAGE_MODEL and attachment.content_type in Config.OLLAMA_IMAGE_MODEL_TYPES:
+                                            files.append(await save_file(attachment))
+                                    case _:
+                                        files.append(ChatHistoryFile(attachment.filename, attachment.content_type))
 
                     if not content and not files:
                         continue

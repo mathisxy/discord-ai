@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 
 import pytz
 from dotenv import load_dotenv
@@ -72,10 +73,14 @@ class Config:
 
     DISCORD_TOKEN: str|None = os.getenv("DISCORD_TOKEN")
 
+    DOWNLOAD_FOLDER: Path = Path(require_env("DOWNLOAD_FOLDER"))
+
     AI: Literal["ollama", "mistral"] = require_env("AI")
 
     MISTRAL_API_KEY: str|None = os.getenv("MISTRAL_API_KEY")
     MISTRAL_MODEL: str = require_env("MISTRAL_MODEL")
+    MISTRAL_IMAGE_MODEL: bool = os.getenv("MISTRAL_IMAGE_MODEL", "").lower() == "true"
+    MISTRAL_IMAGE_MODEL_TYPES: List[str] = extract_csv_tags(require_env("MISTRAL_IMAGE_MODEL_TYPES"))
 
     AZURE_OPENAI_API_KEY: str|None = os.getenv("AZURE_OPENAI_API_KEY")
     AZURE_OPENAI_API_VERSION: str = require_env("AZURE_OPENAI_API_VERSION")
