@@ -44,12 +44,15 @@ def main():
     print("\nChoose AI Provider:")
     print("1) Mistral")
     print("2) Azure OpenAI")
-    print("3) Ollama")
+    print("3) Gemini")
+    print("4) OpenAI")
+    print("5) Ollama")
 
     ai_choice = ""
-    while ai_choice not in ["1", "2", "3"]:
-        ai_choice = input("Enter 1, 2 or 3: ")
+    while ai_choice not in ["1", "2", "3", "4", "5"]:
+        ai_choice = input("Enter 1, 2, 3, 4 or 5: ")
 
+    # --- MISTRAL ---
     if ai_choice == "1":
         lines = replace_line(lines, "AI", "mistral")
         api_key = prompt_default("Enter Mistral API Key")
@@ -57,11 +60,12 @@ def main():
         lines = replace_line(lines, "MISTRAL_API_KEY", api_key)
         lines = replace_line(lines, "MISTRAL_MODEL", model)
 
+    # --- AZURE OPENAI ---
     elif ai_choice == "2":
         lines = replace_line(lines, "AI", "azure")
         key = prompt_default("Enter Azure OpenAI API Key")
         endpoint = prompt_default("Enter Azure Endpoint URL")
-        model = prompt_default("Enter Azure OpenAI Model", "mistral-medium-2505")
+        model = prompt_default("Enter Azure OpenAI Model", "gpt-5-mini")
         version = prompt_default("Enter Azure API Version", "2024-10-21")
 
         lines = replace_line(lines, "AZURE_OPENAI_API_KEY", key)
@@ -69,6 +73,25 @@ def main():
         lines = replace_line(lines, "AZURE_OPENAI_MODEL", model)
         lines = replace_line(lines, "AZURE_OPENAI_API_VERSION", version)
 
+    # --- GEMINI ---
+    elif ai_choice == "3":
+        lines = replace_line(lines, "AI", "gemini")
+        api_key = prompt_default("Enter Gemini API Key")
+        model = prompt_default("Enter Gemini Model", "gemini-2.5-flash")
+
+        lines = replace_line(lines, "GEMINI_API_KEY", api_key)
+        lines = replace_line(lines, "GEMINI_MODEL", model)
+
+    # --- OPENAI ---
+    elif ai_choice == "4":
+        lines = replace_line(lines, "AI", "openai")
+        api_key = prompt_default("Enter OpenAI API Key")
+        model = prompt_default("Enter OpenAI Model", "gpt-5-nano")
+
+        lines = replace_line(lines, "OPENAI_API_KEY", api_key)
+        lines = replace_line(lines, "OPENAI_MODEL", model)
+
+    # --- OLLAMA ---
     else:
         lines = replace_line(lines, "AI", "ollama")
         url = prompt_default("Enter Ollama URL", "http://localhost:11434")
