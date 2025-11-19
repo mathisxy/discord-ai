@@ -13,6 +13,7 @@ load_dotenv()
 
 class Config:
 
+
     @staticmethod
     def extract_loglevel(value: str) -> int:
         level = value.upper()
@@ -86,13 +87,19 @@ class Config:
     AZURE_OPENAI_API_VERSION: str = require_env("AZURE_OPENAI_API_VERSION")
     AZURE_OPENAI_ENDPOINT: str = require_env("AZURE_OPENAI_ENDPOINT")
     AZURE_OPENAI_MODEL: str = require_env("AZURE_OPENAI_MODEL")
+    AZURE_OPENAI_IMAGE_MODEL: bool = os.getenv("AZURE_OPENAI_IMAGE_MODEL", "").lower() == "true"
+    AZURE_OPENAI_IMAGE_MODEL_TYPES: List[str] = extract_csv_tags(require_env("AZURE_OPENAI_IMAGE_MODEL_TYPES"))
 
     GEMINI_API_KEY: str|None = os.getenv("GEMINI_API_KEY")
     GEMINI_ENDPOINT: str = require_env("GEMINI_ENDPOINT")
     GEMINI_MODEL: str = require_env("GEMINI_MODEL")
+    GEMINI_IMAGE_MODEL: bool = os.getenv("GEMINI_IMAGE_MODEL", "").lower() == "true"
+    GEMINI_IMAGE_MODEL_TYPES: List[str] = extract_csv_tags(require_env("GEMINI_IMAGE_MODEL_TYPES"))
 
     OPENAI_API_KEY: str|None = os.getenv("OPENAI_API_KEY")
     OPENAI_MODEL: str = require_env("OPENAI_MODEL")
+    OPENAI_IMAGE_MODEL: bool = os.getenv("OPENAI_IMAGE_MODEL", "").lower() == "true"
+    OPENAI_IMAGE_MODEL_TYPES: List[str] = extract_csv_tags(require_env("OPENAI_IMAGE_MODEL_TYPES"))
 
     OLLAMA_URL: str = require_env("OLLAMA_URL")
     OLLAMA_MODEL: str = require_env("OLLAMA_MODEL")

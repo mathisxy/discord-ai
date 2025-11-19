@@ -51,6 +51,8 @@ match Config.AI:
         llm = OpenAILLM()
     case "ollama":
         llm = OllamaLLM()
+    case _:
+        raise ValueError("Invalid value for AI in the configuration")
 
 
 async def call_ai(history: List[ChatHistoryMessage], instructions: ChatHistoryMessage, queue: asyncio.Queue[DiscordMessage|None], channel: str, use_help_bot: bool = True):
@@ -131,7 +133,7 @@ async def handle_message(message: discord.Message):
 
 
                 history = []
-                async for msg in message.channel.history(limit=Config.TOTAL_MESSAGE_SEARCH_COUNT, oldest_first=False):
+                async for msg in message.channel.history(limit=Config.TOTAL_MESSAGE_SEARCH_COUNT, oldest_first=False): # TODO move out of main.py
 
                     if msg.content == Config.HISTORY_RESET_TEXT:
                         break
@@ -152,6 +154,15 @@ async def handle_message(message: discord.Message):
                                     case "mistral":
                                         if Config.MISTRAL_IMAGE_MODEL and attachment.content_type in Config.MISTRAL_IMAGE_MODEL_TYPES:
                                             files.append(await save_file(attachment))
+                                    case "azure":
+                                        if Config.AZURE_OPENAI_IMAGE_MODEL and attachment.content_type in Config.AZURE_OPENAI_IMAGE_MODEL_TYPES:
+                                            files.append(await save_file(attachment))
+                                    case "gemini":
+                                        if Config.GEMINI_IMAGE_MODEL and attachment.content_type in Config.OPENAI_IMAGE_MODEL_TYPES:
+                                            files.append(await save_file(attachment))
+                                    case "openai":
+                                        if Config.OPENAI_IMAGE_MODEL and attachment.content_type in Config.OPENAI_IMAGE_MODEL_TYPES:
+                                            files.append(await save_file(attachment))
                                     case "ollama":
                                         if Config.OLLAMA_IMAGE_MODEL and attachment.content_type in Config.OLLAMA_IMAGE_MODEL_TYPES:
                                             files.append(await save_file(attachment))
@@ -162,7 +173,7 @@ async def handle_message(message: discord.Message):
                         continue
 
                     history.append(ChatHistoryMessage(role=role, content=content, files=files))
-                    # history.append({"role": role, "content": content, **({"images": images} if images else {})})
+
 
                 history.reverse() # Hoffentlich nicht
 
