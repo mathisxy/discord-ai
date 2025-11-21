@@ -152,19 +152,19 @@ async def handle_message(message: discord.Message):
                             if attachment.content_type:
                                 match Config.AI:
                                     case "mistral":
-                                        if Config.MISTRAL_IMAGE_MODEL and attachment.content_type in Config.MISTRAL_IMAGE_MODEL_TYPES:
+                                        if Config.MISTRAL_VISION and attachment.content_type in Config.MISTRAL_VISION_MODEL_TYPES:
                                             files.append(await save_file(attachment))
                                     case "azure":
-                                        if Config.AZURE_OPENAI_IMAGE_MODEL and attachment.content_type in Config.AZURE_OPENAI_IMAGE_MODEL_TYPES:
+                                        if Config.AZURE_OPENAI_VISION and attachment.content_type in Config.AZURE_OPENAI_VISION_MODEL_TYPES:
                                             files.append(await save_file(attachment))
                                     case "gemini":
-                                        if Config.GEMINI_IMAGE_MODEL and attachment.content_type in Config.OPENAI_IMAGE_MODEL_TYPES:
+                                        if Config.GEMINI_VISION and attachment.content_type in Config.OPENAI_VISION_MODEL_TYPES:
                                             files.append(await save_file(attachment))
                                     case "openai":
-                                        if Config.OPENAI_IMAGE_MODEL and attachment.content_type in Config.OPENAI_IMAGE_MODEL_TYPES:
+                                        if Config.OPENAI_VISION and attachment.content_type in Config.OPENAI_VISION_MODEL_TYPES:
                                             files.append(await save_file(attachment))
                                     case "ollama":
-                                        if Config.OLLAMA_IMAGE_MODEL and attachment.content_type in Config.OLLAMA_IMAGE_MODEL_TYPES:
+                                        if Config.OLLAMA_VISION and attachment.content_type in Config.OLLAMA_VISION_MODEL_TYPES:
                                             files.append(await save_file(attachment))
                                     case _:
                                         files.append(ChatHistoryFile(attachment.filename, attachment.content_type))

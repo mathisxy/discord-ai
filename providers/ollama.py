@@ -2,7 +2,7 @@ import asyncio
 import logging
 import random
 import string
-from typing import List, Dict, Literal, Any
+from typing import List, Dict, Literal, Any, Tuple
 
 from ollama import AsyncClient
 
@@ -10,7 +10,7 @@ from core.chat_history import ChatHistoryMessage, ChatHistoryFileSaved
 from core.config import Config
 from core.discord_messages import DiscordMessage
 from providers.default import DefaultLLM, LLMResponse, LLMToolCall
-from providers.utils.chat import LLMChat
+from core.chat import LLMChat
 from providers.utils.vram import wait_for_vram
 
 
@@ -25,8 +25,7 @@ class OllamaLLM(DefaultLLM):
 
 
 
-    @classmethod
-    async def generate(cls, chat: LLMChat, model_name: str | None = None, temperature: str | None = None, think: bool | Literal["low", "medium", "high"] | None = None, keep_alive: str | float | None = None, timeout: float | None = None, tools: List[Dict] | None = None) -> LLMResponse:
+    async def generate(self, chat: LLMChat, model_name: str | None = None, temperature: str | None = None, think: bool | Literal["low", "medium", "high"] | None = None, keep_alive: str | float | None = None, timeout: float | None = None, tools: List[Dict] | None = None) -> LLMResponse:
 
         if Config.OLLAMA_REQUIRED_VRAM_IN_GB:
             await wait_for_vram(required_gb=Config.OLLAMA_REQUIRED_VRAM_IN_GB, timeout=Config.OLLAMA_WAIT_FOR_REQUIRED_VRAM)
@@ -34,6 +33,7 @@ class OllamaLLM(DefaultLLM):
             logging.warning("Waiting for VRAM is disabled")
 
         model_name = model_name if model_name else Config.OLLAMA_MODEL
+        messages = [self.format_history_entry(msg) for msg in chat.history]
         temperature = temperature if temperature else Config.OLLAMA_MODEL_TEMPERATURE
         think = think if think else Config.OLLAMA_THINK
         keep_alive = keep_alive if keep_alive else Config.OLLAMA_KEEP_ALIVE
@@ -46,7 +46,7 @@ class OllamaLLM(DefaultLLM):
             response = await asyncio.wait_for(
                 chat.client.chat(
                     model=model_name,
-                    messages=chat.history,
+                    messages=messages,
                     stream=False,
                     keep_alive=keep_alive,
                     options={
@@ -69,22 +69,10 @@ class OllamaLLM(DefaultLLM):
             logging.error(e, exc_info=True)
             raise Exception(f"Ollama Error: {e}")
 
-
     @classmethod
-    def add_tool_call_message(cls, chat: LLMChat, tool_calls: List[LLMToolCall]) -> None:
-        if Config.TOOL_INTEGRATION:
-            chat.history.append({"role": "assistant", "tool_calls": [
-                {"id": t.id, "type": "function", "function": {
-                    "name": t.name,
-                    "arguments": t.arguments
-                }
-                 } for t in tool_calls
-            ]})
+    def add_tool_call_results_message(cls, chat: LLMChat, tool_responses: [Tuple[LLMToolCall, str]]) -> None:
 
-    @classmethod
-    def add_tool_call_results_message(cls, chat: LLMChat, tool_call: LLMToolCall, content: str) -> None:
-
-        chat.history.append({"role": "system", "tool_call_id": tool_call.id, "content": f"#{content}"})
+        chat.history.append(ChatHistoryMessage(role="tool", tool_responses=tool_responses, is_temporary=True))
 
 
     @classmethod
@@ -95,7 +83,7 @@ class OllamaLLM(DefaultLLM):
             logging.info(file)
             if isinstance(file, ChatHistoryFileSaved):
                 logging.info(f"Found saved file entry in history: {file}")
-                if file.mime_type in Config.OLLAMA_IMAGE_MODEL_TYPES:
+                if file.mime_type in Config.OLLAMA_VISION_MODEL_TYPES:
                     logging.info(f"Is image")
                     formatted_entry.setdefault("images", []).append(file.save_path)
 

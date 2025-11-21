@@ -1,7 +1,7 @@
 import logging
 
 from providers.base import BaseLLM
-from providers.utils.chat import LLMChat
+from core.chat import LLMChat
 
 
 async def error_reasoning(

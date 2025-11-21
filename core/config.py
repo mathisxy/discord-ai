@@ -80,26 +80,26 @@ class Config:
 
     MISTRAL_API_KEY: str|None = os.getenv("MISTRAL_API_KEY")
     MISTRAL_MODEL: str = require_env("MISTRAL_MODEL")
-    MISTRAL_IMAGE_MODEL: bool = os.getenv("MISTRAL_IMAGE_MODEL", "").lower() == "true"
-    MISTRAL_IMAGE_MODEL_TYPES: List[str] = extract_csv_tags(require_env("MISTRAL_IMAGE_MODEL_TYPES"))
+    MISTRAL_VISION: bool = os.getenv("MISTRAL_VISION", "").lower() == "true"
+    MISTRAL_VISION_MODEL_TYPES: List[str] = extract_csv_tags(require_env("MISTRAL_VISION_MODEL_TYPES"))
 
     AZURE_OPENAI_API_KEY: str|None = os.getenv("AZURE_OPENAI_API_KEY")
     AZURE_OPENAI_API_VERSION: str = require_env("AZURE_OPENAI_API_VERSION")
     AZURE_OPENAI_ENDPOINT: str = require_env("AZURE_OPENAI_ENDPOINT")
     AZURE_OPENAI_MODEL: str = require_env("AZURE_OPENAI_MODEL")
-    AZURE_OPENAI_IMAGE_MODEL: bool = os.getenv("AZURE_OPENAI_IMAGE_MODEL", "").lower() == "true"
-    AZURE_OPENAI_IMAGE_MODEL_TYPES: List[str] = extract_csv_tags(require_env("AZURE_OPENAI_IMAGE_MODEL_TYPES"))
+    AZURE_OPENAI_VISION: bool = os.getenv("AZURE_OPENAI_VISION", "").lower() == "true"
+    AZURE_OPENAI_VISION_MODEL_TYPES: List[str] = extract_csv_tags(require_env("AZURE_OPENAI_VISION_MODEL_TYPES"))
 
     GEMINI_API_KEY: str|None = os.getenv("GEMINI_API_KEY")
     GEMINI_ENDPOINT: str = require_env("GEMINI_ENDPOINT")
     GEMINI_MODEL: str = require_env("GEMINI_MODEL")
-    GEMINI_IMAGE_MODEL: bool = os.getenv("GEMINI_IMAGE_MODEL", "").lower() == "true"
-    GEMINI_IMAGE_MODEL_TYPES: List[str] = extract_csv_tags(require_env("GEMINI_IMAGE_MODEL_TYPES"))
+    GEMINI_VISION: bool = os.getenv("GEMINI_VISION", "").lower() == "true"
+    GEMINI_VISION_MODEL_TYPES: List[str] = extract_csv_tags(require_env("GEMINI_VISION_MODEL_TYPES"))
 
     OPENAI_API_KEY: str|None = os.getenv("OPENAI_API_KEY")
     OPENAI_MODEL: str = require_env("OPENAI_MODEL")
-    OPENAI_IMAGE_MODEL: bool = os.getenv("OPENAI_IMAGE_MODEL", "").lower() == "true"
-    OPENAI_IMAGE_MODEL_TYPES: List[str] = extract_csv_tags(require_env("OPENAI_IMAGE_MODEL_TYPES"))
+    OPENAI_VISION: bool = os.getenv("OPENAI_VISION", "").lower() == "true"
+    OPENAI_VISION_MODEL_TYPES: List[str] = extract_csv_tags(require_env("OPENAI_VISION_MODEL_TYPES"))
 
     OLLAMA_URL: str = require_env("OLLAMA_URL")
     OLLAMA_MODEL: str = require_env("OLLAMA_MODEL")
@@ -107,8 +107,8 @@ class Config:
     OLLAMA_THINK: bool|Literal["low", "medium", "high"]|None = extract_ollama_think(os.getenv("OLLAMA_THINK"))
     OLLAMA_KEEP_ALIVE: float | int | None = extract_duration(os.getenv("OLLAMA_KEEP_ALIVE"))
     OLLAMA_TIMEOUT: float | int | None = extract_duration(os.getenv("OLLAMA_TIMEOUT"))
-    OLLAMA_IMAGE_MODEL: bool = os.getenv("OLLAMA_IMAGE_MODEL", "").lower() == "true"
-    OLLAMA_IMAGE_MODEL_TYPES: List[str] = extract_csv_tags(require_env("OLLAMA_IMAGE_MODEL_TYPES"))
+    OLLAMA_VISION: bool = os.getenv("OLLAMA_VISION", "").lower() == "true"
+    OLLAMA_VISION_MODEL_TYPES: List[str] = extract_csv_tags(require_env("OLLAMA_VISION_MODEL_TYPES"))
     OLLAMA_REQUIRED_VRAM_IN_GB: float | int | None = int(value) if (value := os.getenv("OLLAMA_REQUIRED_VRAM_IN_GB")) else None
     OLLAMA_WAIT_FOR_REQUIRED_VRAM: float | int = extract_duration(require_env("OLLAMA_WAIT_FOR_REQUIRED_VRAM"))
 

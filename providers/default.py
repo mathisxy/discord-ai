@@ -3,13 +3,13 @@ import json
 import random
 import string
 from abc import abstractmethod
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
 
 from core.chat_history import ChatHistoryMessage, ChatHistoryFile, ChatHistoryFileText
 from core.config import Config
 from core.discord_messages import DiscordMessage, DiscordMessageReply
 from providers.base import LLMToolCall, LLMResponse, BaseLLM
-from providers.utils.chat import LLMChat
+from core.chat import LLMChat
 from providers.utils.mcp_client import generate_with_mcp
 
 
@@ -19,9 +19,7 @@ class DefaultLLM(BaseLLM):
 
         self.chats.setdefault(channel, LLMChat())
 
-        formatted_history = [self.format_history_entry(entry) for entry in history]
-        instructions_entry = self.format_history_entry(instructions)
-        self.chats[channel].update_history(formatted_history, instructions_entry)
+        self.chats[channel].update_history(history, instructions)
 
         if Config.MCP_INTEGRATION_CLASS:
             await generate_with_mcp(self, self.chats[channel], queue, use_help_bot)
@@ -36,39 +34,69 @@ class DefaultLLM(BaseLLM):
 
     @classmethod
     def format_history_entry(cls, entry: ChatHistoryMessage) -> Dict[str, Any]:
-        content = entry.content
+
+        parts = []
+
+        if entry.content:
+            parts.append({
+                "type": "text",
+                "text": entry.content
+            })
+
+
         for file in entry.files:
             if isinstance(file, ChatHistoryFile):
                 if isinstance(file, ChatHistoryFileText):
-                    content += f"\n<#File filename=\"{file.name}\">{file.text_content}</File>"
+                    parts.append({
+                        "type": "text",
+                        "text": f"<#File filename=\"{file.name}\">{file.text_content}</File>"
+                    })
                 else:
-                    content += f"\n<#File filename=\"{file.name}\">"
+                    parts.append({
+                        "type": "text",
+                        "text": f"\n<#File filename=\"{file.name}\">"
+                    })
 
-        return {"role": entry.role, "content": content}
+        for tool_call in entry.tool_calls:
+            parts.append({
+                "id": tool_call.id, "type": "function", "function": {
+                    "name": tool_call.name,
+                    "arguments": json.dumps(tool_call.arguments)
+                }
+            })
+
+        for tool_call, tool_response in entry.tool_responses:
+            parts.append({
+                "type": "function_call_output",
+                "call_id": tool_call.id,
+                "output": tool_response,
+            })
+
+        return {
+            "role": entry.role,
+            "content": parts,
+        }
+
 
     @classmethod
     def add_assistant_message(cls, chat: LLMChat, message: str) -> None:
-        chat.history.append({"role": "assistant", "content": message})
+        # chat.history.append({"role": "assistant", "content": message})
+        chat.history.append(ChatHistoryMessage(role="assistant", content=message))
 
     @classmethod
     def add_error_message(cls, chat: LLMChat, message: str) -> None:
-        chat.history.append({"role": "system", "content": message})
+        # chat.history.append({"role": "system", "content": message})
+        chat.history.append(ChatHistoryMessage(role="system", content=message))
 
     @classmethod
     def add_tool_call_message(cls, chat: LLMChat, tool_calls: List[LLMToolCall]) -> None:
         if Config.TOOL_INTEGRATION:
-            chat.history.append({"role": "assistant", "tool_calls": [
-                {"id": t.id, "type": "function", "function": {
-                    "name": t.name,
-                    "arguments": json.dumps(t.arguments)
-                }
-                 } for t in tool_calls
-            ]})
+            chat.history.append(ChatHistoryMessage(role="assistant", tool_calls=tool_calls, is_temporary=True))
 
     @classmethod
-    def add_tool_call_results_message(cls, chat: LLMChat, tool_call: LLMToolCall, content: str) -> None:
+    def add_tool_call_results_message(cls, chat: LLMChat, tool_responses: [Tuple[LLMToolCall, str]]) -> None:
 
-        chat.history.append({"role": "tool", "tool_call_id": tool_call.id, "content": f"#{content}"})
+        chat.history.append(ChatHistoryMessage(role="tool", tool_responses=tool_responses, is_temporary=True))
 
     @classmethod
     def extract_custom_tool_call(cls, text: str) -> LLMToolCall:

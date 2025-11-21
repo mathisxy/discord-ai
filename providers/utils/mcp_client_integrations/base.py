@@ -8,7 +8,7 @@ from mcp.types import CallToolResult
 
 from core.discord_messages import DiscordMessage
 from providers.base import BaseLLM, LLMToolCall
-from providers.utils.chat import LLMChat
+from core.chat import LLMChat
 
 
 class MCPIntegration:

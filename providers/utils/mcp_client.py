@@ -2,7 +2,6 @@ import asyncio
 import json
 import logging
 import re
-from sys import exc_info
 from typing import List
 
 from fastmcp import Client
@@ -12,7 +11,7 @@ from core.config import Config
 from core.discord_messages import DiscordMessage, DiscordMessageReplyTmp, \
     DiscordMessageRemoveTmp, DiscordMessageReply, DiscordMessageReplyTmpError
 from providers.base import BaseLLM, LLMToolCall
-from providers.utils.chat import LLMChat
+from core.chat import LLMChat
 from providers.utils.error_reasoning import error_reasoning
 from providers.utils.response_filtering import filter_response
 from providers.utils.tool_calls import mcp_to_dict_tools, get_custom_tools_system_prompt, get_tools_system_prompt
@@ -37,9 +36,9 @@ async def generate_with_mcp(llm: BaseLLM, chat: LLMChat, queue: asyncio.Queue[Di
         logging.info(mcp_dict_tools)
 
         if not Config.TOOL_INTEGRATION:
-            chat.system_entry["content"] += get_custom_tools_system_prompt(mcp_tools)
+            chat.system_entry.content += get_custom_tools_system_prompt(mcp_tools)
         else:
-            chat.system_entry["content"] += get_tools_system_prompt()
+            chat.system_entry.content += get_tools_system_prompt()
 
         tool_call_errors = False
 

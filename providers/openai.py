@@ -9,7 +9,7 @@ from core.chat_history import ChatHistoryFileSaved, ChatHistoryMessage
 from core.config import Config
 from providers.base import LLMResponse, LLMToolCall
 from providers.default import DefaultLLM
-from providers.utils.chat import LLMChat
+from core.chat import LLMChat
 
 
 class OpenAILLM(DefaultLLM):
@@ -23,10 +23,12 @@ class OpenAILLM(DefaultLLM):
                        timeout: float | None = None, tools: List[Dict] | None = None) -> LLMResponse:
 
         model_name = model_name or Config.OPENAI_MODEL
+        messages = [self.format_history_entry(msg) for msg in chat.history]
+
 
         completion = await self.client.chat.completions.create(
             model=model_name,
-            messages=chat.history,
+            messages=messages,
             temperature=temperature,
             tools=tools
         )
@@ -47,34 +49,21 @@ class OpenAILLM(DefaultLLM):
     def format_history_entry(cls, entry: ChatHistoryMessage) -> Dict[str, Any]:
         formatted_entry = super().format_history_entry(entry)
 
-        image_urls = []
-
         for file in entry.files:
             logging.info(file)
             if isinstance(file, ChatHistoryFileSaved):
                 logging.info(f"Found saved file entry in history: {file}")
-                if file.mime_type in Config.OPENAI_IMAGE_MODEL_TYPES:
+                if file.mime_type in Config.AZURE_OPENAI_VISION_MODEL_TYPES:
                     logging.info(f"Is image")
                     with open(file.save_path, "rb") as f:
                         b64 = base64.b64encode(f.read()).decode("utf-8")
-                        image_urls.append(f"data:{file.mime_type};base64,{b64}")
 
-        if image_urls:
-            if formatted_entry.get("content"):
-                formatted_entry["content"] = [{
-                    "type": "text",
-                    "text": formatted_entry["content"],
-                }]
-            else:
-                formatted_entry["content"] = []
-
-            for image_url in image_urls:
-                formatted_entry["content"].append({
-                    "type": "image_url",
-                    "image_url": {
-                        "url": image_url,
-                    }
-                })
+                        formatted_entry["content"].append({
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:{file.mime_type};base64,{b64}",
+                            }
+                        })
 
         logging.info(formatted_entry)
 

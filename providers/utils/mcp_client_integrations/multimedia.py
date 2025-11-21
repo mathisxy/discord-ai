@@ -13,7 +13,7 @@ from core.config import Config
 from core.discord_messages import DiscordMessageFileTmp, DiscordMessageReplyTmp, \
     DiscordMessageProgressTmp, DiscordMessageFile
 from providers.base import LLMToolCall
-from providers.utils.chat import LLMChat
+from core.chat import LLMChat
 from providers.utils.mcp_client_integrations.base import MCPIntegration
 
 

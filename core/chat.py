@@ -1,17 +1,18 @@
 import logging
-from typing import List, Dict
+from typing import List
 
 import tiktoken
 from GPUtil import GPUtil
 from ollama import AsyncClient
 
+from core.chat_history import ChatHistoryMessage
 from core.config import Config
 
 
 class LLMChat:
 
     client: AsyncClient|None
-    history: List[Dict[str, str]]
+    history: List[ChatHistoryMessage]
     tokenizer: tiktoken
 
     max_tokens = 3700 if len(GPUtil.getGPUs()) == 0 else Config.MAX_TOKENS
@@ -25,31 +26,31 @@ class LLMChat:
 
 
     @property
-    def system_entry(self) -> Dict[str, str] | None:
+    def system_entry(self) -> ChatHistoryMessage | None:
         if self.history:
             return self.history[0]
         return None
 
     @system_entry.setter
-    def system_entry(self, value: Dict[str, str]):
+    def system_entry(self, value: ChatHistoryMessage):
         if not self.history:
             self.history = [value]
         else:
             self.history[0] = value
 
-    def update_history(self, new_history: List[Dict[str, str]], instructions_entry: Dict[str, str]|None = None, min_overlap=1):
+    def update_history(self, new_history: List[ChatHistoryMessage], instructions_entry: ChatHistoryMessage|None = None, min_overlap=1):
 
-        history_without_tool_results = [x for x in self.history if not (x["role"] == "system" and x.get("content", "").startswith('#'))]
+        history_without_temporary_messages = [x for x in self.history if not x.is_temporary]
 
         #print("HISTORY WITHOUT TOOLS")
         #print(history_without_tool_results)
         #print(new_history)
 
-        max_overlap_length = len(history_without_tool_results)
+        max_overlap_length = len(history_without_temporary_messages)
         overlap_length = None
 
         for length in range(max_overlap_length, min_overlap, -1):
-            if history_without_tool_results[-length:] == new_history[:length]:
+            if history_without_temporary_messages[-length:] == new_history[:length]:
                 overlap_length = length
                 logging.info(f"OVERLAP LENGTH: {overlap_length}")
                 break
@@ -80,7 +81,7 @@ class LLMChat:
             logging.info(self.history)
 
 
-    def build_prompt(self, history=None) -> str:
+    def build_prompt(self, history: List[ChatHistoryMessage]=None) -> str:
         """Only builds role and content"""
 
         if history is None:
@@ -88,15 +89,7 @@ class LLMChat:
 
         prompt_lines = []
         for msg in history:
-            role = msg.get("role", "user")
-            content = msg.get("content")
-            if isinstance(content, List): # Format {content: [{"type": "text", "text": "..."}]}
-                content = [c.get("text") for c in content if c.get("type") == "text"]
-                if content:
-                    content = content[0]
-                else:
-                    content = ""
-            prompt_lines.append(f"{role}: {content}")
+            prompt_lines.append(f"{msg.role}: {msg.content}")
         return "\n".join(prompt_lines)
 
     def count_tokens(self, history=None) -> int:

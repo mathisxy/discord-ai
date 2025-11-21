@@ -4,13 +4,13 @@ import logging
 import pkgutil
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Dict, List, TYPE_CHECKING, Type, Any
+from typing import Dict, List, TYPE_CHECKING, Type, Any, Tuple
 
 from core.chat_history import ChatHistoryMessage
 from core.config import Config
 from core.discord_messages import DiscordMessage
 from providers.utils import mcp_client_integrations
-from providers.utils.chat import LLMChat
+from core.chat import LLMChat
 
 if TYPE_CHECKING:
     from providers.utils.mcp_client_integrations.base import MCPIntegration
@@ -85,7 +85,7 @@ class BaseLLM(ABC):
 
     @classmethod
     @abstractmethod
-    def add_tool_call_results_message(cls, chat: LLMChat, tool_call: LLMToolCall, content: str) -> None:
+    def add_tool_call_results_message(cls, chat: LLMChat, tool_responses: List[Tuple[LLMToolCall, str]]) -> None:
         pass
 
     @classmethod
