@@ -31,7 +31,7 @@ async def handle_messages(bot: commands.Bot, message: discord.Message) -> List[C
 
     history: List[ChatHistoryMessage] = []
 
-    async for msg in message.channel.history(limit=Config.TOTAL_MESSAGE_SEARCH_COUNT, oldest_first=False): # TODO move out of main.py
+    async for msg in message.channel.history(limit=Config.TOTAL_MESSAGE_SEARCH_COUNT, oldest_first=False):
 
         if msg.content == Config.HISTORY_RESET_TEXT:
             break
