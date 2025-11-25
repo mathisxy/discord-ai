@@ -97,7 +97,6 @@ async def handle_message(message: discord.Message):
 
                 await asyncio.gather(task1, task2)
 
-
             except Exception as e:
                 logging.error(e, exc_info=True)
                 await message.channel.send(str(e))
