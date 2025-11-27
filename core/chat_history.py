@@ -60,10 +60,6 @@ class ChatHistoryFileSaved(ChatHistoryFile):
             except Exception as e:
                 logging.exception(f"Deletion of '{self.full_path}' failed: {e}")
 
-    def __del__(self):
-        if self.temporary:
-            self.delete()
-
 
 
 @dataclass
@@ -76,8 +72,8 @@ class ChatHistoryMessage:
 
     role: Literal["system", "user", "assistant", "tool"]
     content: str|None = None
-    files: [ChatHistoryFile] = field(default_factory=list)
-    tool_calls: [LLMToolCall] = field(default_factory=list)
+    files: List[ChatHistoryFile] = field(default_factory=list)
+    tool_calls: List[LLMToolCall] = field(default_factory=list)
     tool_response: Tuple[LLMToolCall, str] = field(default_factory=list)
 
     is_temporary: bool = False
@@ -108,13 +104,14 @@ class ChatHistoryController:
 
     def update(self, new_history: List[ChatHistoryMessage], instructions_entry: ChatHistoryMessage | None = None, min_overlap=1, max_tokens:int|None = None, tokenizer: Type[tiktoken]|None = None):
 
-        history_without_temporary_messages = [x for x in self.history if not x.is_temporary]
+        old_history = self.history
+        old_history_without_temporary_messages = [x for x in old_history if not x.is_temporary]
 
-        max_overlap_length = len(history_without_temporary_messages)
+        max_overlap_length = len(old_history_without_temporary_messages)
         overlap_length = None
 
         for length in range(max_overlap_length, min_overlap, -1):
-            if history_without_temporary_messages[-length:] == new_history[:length]:
+            if old_history_without_temporary_messages[-length:] == new_history[:length]:
                 overlap_length = length
                 logging.info(f"OVERLAP LENGTH: {overlap_length}")
                 break
@@ -143,6 +140,22 @@ class ChatHistoryController:
             self.history = [instructions_entry] if instructions_entry else []
             self.history.extend(new_history)
             logging.info(self.history)
+
+
+        self.delete_unused_temporary_files(old_history)
+
+
+    def delete_unused_temporary_files(self, old_history: List[ChatHistoryMessage], new_history: list[ChatHistoryMessage]|None = None):
+
+        new_history = new_history if new_history else self.history
+
+        old_files = [file for entry in old_history for file in entry.files if isinstance(file, ChatHistoryFileSaved) and file.temporary]
+        new_files = [file for entry in new_history for file in entry.files if isinstance(file, ChatHistoryFileSaved) and file.temporary]
+
+        for old_file in old_files:
+            if old_file not in new_files:
+                old_file.delete()
+
 
 
     def build_prompt(self, history: List[ChatHistoryMessage]=None) -> str:
