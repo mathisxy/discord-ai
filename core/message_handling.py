@@ -61,6 +61,7 @@ async def handle_message(bot: commands.Bot, message: discord.Message) -> ChatHis
     files = []
 
     if message.attachments:
+        logging.info("Attachments: %s", message.attachments)
         files = await handle_attachments(bot, message)
 
 
@@ -76,25 +77,33 @@ async def handle_attachments(bot: commands.Bot, message: discord.Message) -> Lis
 
     for attachment in message.attachments:
 
+        logging.info(attachment.content_type)
+
         if attachment.content_type:
-            match Config.AI:
-                case "mistral":
-                    if Config.MISTRAL_VISION and attachment.content_type in Config.MISTRAL_VISION_MODEL_TYPES:
-                        files.append(await save_file(bot, message, attachment))
-                case "azure":
-                    if Config.AZURE_OPENAI_VISION and attachment.content_type in Config.AZURE_OPENAI_VISION_MODEL_TYPES:
-                        files.append(await save_file(bot, message, attachment))
-                case "gemini":
-                    if Config.GEMINI_VISION and attachment.content_type in Config.OPENAI_VISION_MODEL_TYPES:
-                        files.append(await save_file(bot, message, attachment))
-                case "openai":
-                    if Config.OPENAI_VISION and attachment.content_type in Config.OPENAI_VISION_MODEL_TYPES:
-                        files.append(await save_file(bot, message, attachment))
-                case "ollama":
-                    if Config.OLLAMA_VISION and attachment.content_type in Config.OLLAMA_VISION_MODEL_TYPES:
-                        files.append(await save_file(bot, message, attachment))
-                case _:
-                    files.append(ChatHistoryFile(attachment.filename, attachment.content_type))
+            # Mapping: Welcher Provider nutzt welche Vision-Settings?
+            # Format: "Provider": (Vision_Aktiviert_Flag, Erlaubte_Typen_Liste)
+            vision_configs = {
+                "mistral": (Config.MISTRAL_VISION, Config.MISTRAL_VISION_MODEL_TYPES),
+                "azure":   (Config.AZURE_OPENAI_VISION, Config.AZURE_OPENAI_VISION_MODEL_TYPES),
+                "gemini":  (Config.GEMINI_VISION, Config.GEMINI_VISION_MODEL_TYPES), # Checke deine Config-Namen hier!
+                "openai":  (Config.OPENAI_VISION, Config.OPENAI_VISION_MODEL_TYPES),
+                "ollama":  (Config.OLLAMA_VISION, Config.OLLAMA_VISION_MODEL_TYPES),
+            }
+
+            # Hole die Config für den aktuellen Provider (Standard: False und leere Liste)
+            is_vision_enabled, allowed_types = vision_configs.get(Config.AI, (False, []))
+
+            # Die eigentliche Logik (nur noch einmal schreiben!)
+            if is_vision_enabled and attachment.content_type in allowed_types:
+                files.append(await save_file(bot, message, attachment))
+            else:
+                logging.info("Add only Filename: %s", attachment)
+                files.append(ChatHistoryFile(attachment.filename, attachment.content_type))
+
+        else:
+            logging.exception("No content type present: %s", attachment)
+
+    logging.info("Files: %s", files)
 
     return files
 
@@ -107,6 +116,9 @@ async def save_file(bot: commands.Bot, message: discord.Message, attachment: dis
     os.makedirs(Config.DOWNLOAD_FOLDER / str(message.channel.id), exist_ok=True)
 
     file_bytes = await attachment.read()
+
+    if not file_bytes:
+        logging.exception("Empty attachment: %s", attachment)
 
     chat_history_file = ChatHistoryFileSaved(attachment.filename, attachment.content_type, path / unique_filename)
 

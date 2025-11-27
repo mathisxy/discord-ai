@@ -52,6 +52,8 @@ class ChatHistoryFileSaved(ChatHistoryFile):
         with open(self.full_path, "wb") as f:
             f.write(file_bytes)
 
+        logging.info(f"Saved {self.full_path}")
+
     def delete(self) -> None:
         if self.full_path.exists():
             try:
