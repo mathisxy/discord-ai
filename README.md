@@ -68,7 +68,7 @@ This project implements a custom **Discord Bot** with integrated **AI Backend** 
 
    4. For direct use via commandline rename the generated `.env.{botname}` to `.env`:
       ```bash
-      cp .env.emanuel .env
+      cp .env.{botname} .env
       ```
    
    
