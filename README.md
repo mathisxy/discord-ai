@@ -2,7 +2,6 @@
 
 
 This project implements a custom **Discord Bot** with integrated **AI Backend** and optional tool calling via **MCP Integration**.
-> Under development, not feature complete.
 
 <br>
 
