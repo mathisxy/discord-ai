@@ -13,21 +13,30 @@ from core.discord_messages import DiscordMessage
 from providers.default import DefaultLLM, LLMResponse, LLMToolCall
 from providers.utils.vram import wait_for_vram
 
+class ChatHistoryControllerOllama(ChatHistoryController):
+
+    client: AsyncClient
+
+    def __init__(self, client: AsyncClient):
+        super().__init__()
+
+        self.client = client
+
 
 class OllamaLLM(DefaultLLM):
 
     async def call(self, history: List[ChatHistoryMessage], instructions: ChatHistoryMessage, queue: asyncio.Queue[DiscordMessage | None],
                    channel: str, use_help_bot=False):
 
-        self.chats.setdefault(channel, ChatHistoryController())
+        self.chats: Dict[str, ChatHistoryControllerOllama]
 
-        self.chats[channel].client = AsyncClient(host=Config.OLLAMA_URL) # dynamic attribute
+        self.chats.setdefault(channel, ChatHistoryControllerOllama(AsyncClient(host=Config.OLLAMA_URL)))
 
         await super().call(history, instructions, queue, channel, use_help_bot)
 
 
 
-    async def generate(self, chat: ChatHistoryController, model_name: str | None = None, temperature: str | None = None, think: bool | Literal["low", "medium", "high"] | None = None, keep_alive: str | float | None = None, timeout: float | None = None, tools: List[Dict] | None = None) -> LLMResponse:
+    async def generate(self, chat: ChatHistoryControllerOllama, model_name: str | None = None, temperature: str | None = None, think: bool | Literal["low", "medium", "high"] | None = None, keep_alive: str | float | None = None, timeout: float | None = None, tools: List[Dict] | None = None) -> LLMResponse:
 
         if Config.OLLAMA_REQUIRED_VRAM_IN_GB:
             await wait_for_vram(required_gb=Config.OLLAMA_REQUIRED_VRAM_IN_GB, timeout=Config.OLLAMA_WAIT_FOR_REQUIRED_VRAM)
@@ -103,14 +112,13 @@ class OllamaLLM(DefaultLLM):
         for file in entry.files:
             if isinstance(file, ChatHistoryFile):
                 if isinstance(file, ChatHistoryFileText):
-                    content += f"\n<#File filename=\"{file.name}\">{file.text_content}</File>"
-                elif isinstance(file, ChatHistoryFileSaved):
-                    logging.info(f"Found saved file entry in history: {file}")
-                    if file.mime_type in Config.OLLAMA_VISION_MODEL_TYPES:
-                        logging.info(f"Is image")
-                        images.append(file.full_path)
+                    content += f"\n<#File name=\"{file.name}\">{file.text_content}</File>"
+                elif isinstance(file, ChatHistoryFileSaved) and file.mime_type in Config.OLLAMA_VISION_MODEL_TYPES:
+                    logging.info(f"Found saved image entry in history: {file}")
+                    images.append(file.full_path)
+                    content += f"\n<#Image name=\"{file.name}\">"
                 else:
-                    content += f"\n<#File filename=\"{file.name}\">"
+                    content += f"\n<#File name=\"{file.name}\">"
 
         for tool_call in entry.tool_calls:
             tool_calls.append({

@@ -94,7 +94,7 @@ async def handle_attachments(bot: commands.Bot, message: discord.Message) -> Lis
             is_vision_enabled, allowed_types = vision_configs.get(Config.AI, (False, []))
 
             # Die eigentliche Logik (nur noch einmal schreiben!)
-            if is_vision_enabled and attachment.content_type in allowed_types:
+            if is_vision_enabled: # attachment.content_type in allowed_types:
                 files.append(await save_file(bot, message, attachment))
             else:
                 logging.info("Add only Filename: %s", attachment)

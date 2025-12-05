@@ -76,7 +76,7 @@ class GeminiLLM(DefaultLLM):
             if isinstance(file, ChatHistoryFile):
                 if isinstance(file, ChatHistoryFileText):
                     parts.append({
-                        "text": f"<#File filename=\"{file.name}\">{file.text_content}</File>"
+                        "text": f"<#File name=\"{file.name}\">{file.text_content}</File>"
                     })
                 elif isinstance(file, ChatHistoryFileSaved) and file.mime_type in Config.GEMINI_VISION_MODEL_TYPES:
                     logging.info(f"Using vision for {file}")
@@ -91,7 +91,7 @@ class GeminiLLM(DefaultLLM):
                     })
                 else:
                     parts.append({
-                        "text": f"<#File filename=\"{file.name}\">"
+                        "text": f"<#File name=\"{file.name}\">"
                     })
 
         for tool_call in entry.tool_calls:

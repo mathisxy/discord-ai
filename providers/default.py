@@ -58,12 +58,12 @@ class DefaultLLM(BaseLLM):
                 if isinstance(file, ChatHistoryFileText):
                     parts.append({
                         "type": "text",
-                        "text": f"<#File filename=\"{file.name}\">{file.text_content}</File>"
+                        "text": f"<#File name=\"{file.name}\">{file.text_content}</File>"
                     })
                 else:
                     parts.append({
                         "type": "text",
-                        "text": f"\n<#File filename=\"{file.name}\">"
+                        "text": f"\n<#File name=\"{file.name}\">"
                     })
 
         for tool_call in entry.tool_calls:
