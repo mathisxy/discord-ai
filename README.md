@@ -25,7 +25,7 @@ This project implements a custom **Discord Bot** with integrated **AI Backend** 
 
 <br>
 
-## ⚙️ Installation on Linux
+## ⚙️ Installation on Ubuntu
 
 1. 📦 Clone Repository:
    ```bash
@@ -37,6 +37,7 @@ This project implements a custom **Discord Bot** with integrated **AI Backend** 
    Create and activate a Python Virtual Environment:
 
    ```bash
+   sudo apt install python3.12-venv
    python3 -m venv venv
    source venv/bin/activate
    ```
