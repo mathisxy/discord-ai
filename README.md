@@ -19,7 +19,7 @@ This project implements a custom **Discord Bot** with integrated **AI Backend** 
 
 [![Mistral](https://img.shields.io/badge/Mistral-Supported-brightgreen)](https://mistral.ai/)
 [![Azure OpenAI](https://img.shields.io/badge/Azure_OpenAI-Supported-brightgreen)](https://ai.azure.com)
-[![Gemini](https://img.shields.io/badge/Gemini-API_Update_WIP-brightgreen)](https://ai.azure.com)
+[![Gemini](https://img.shields.io/badge/Gemini-API_Update_WIP-yellow)](https://ai.azure.com)
 [![OpenAI](https://img.shields.io/badge/OpenAI-Supported-brightgreen)](https://ai.azure.com)
 [![Ollama](https://img.shields.io/badge/Ollama-Supported-brightgreen)](https://ollama.com/)
 
