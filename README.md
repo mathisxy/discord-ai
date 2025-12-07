@@ -95,8 +95,6 @@ This project implements a custom **Discord Bot** with integrated **AI Backend** 
 
     - Check for errors:
     ```
-    sudo service {botname} status
-
     journalctl -u {botname}.service
     ```
 
