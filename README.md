@@ -80,6 +80,11 @@ This project implements a custom **Discord Bot** with integrated **AI Backend** 
    python main.py
    ```
    **Option 2: As a systemd service**
+
+    ```
+    python setup_service.py
+    ```
+   
     - ✅ Create and activate:
     ```bash
     sudo cp {botname}.service /etc/systemd/system/
